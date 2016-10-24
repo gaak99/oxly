@@ -1,5 +1,10 @@
-#Intro
+#Status
 
+Brand new as of late Oct 2016.
+
+Used daily by the author but that's total usage so far -- beta testers and comments welcome.
+
+#Intro
 
 oxit uses the Drobox API to observ/merge diffs of any two Dropbox file revisions with a git-style cli.
 
