@@ -38,14 +38,19 @@ As far as a poor-man's DVCS goes, oxit is useful when git is not avail but lacks
 * Install
 
 ```bash
-git clone 
-setup ...
+git clone https://github.com/gaak99/oxit.git
+python setup.py install 
 ```
 * Dropbox auth token
 
+Generate an auth token from Dropbox app console
+   `<https://www.dropbox.com/developers/apps>`
+   
+Add it to `auth_token=$token` in ~/.oxitconfig in `[misc]` section.
+
 ##Daily(ish)
 
-1. Save org-mode notes (on two Dropbox clients)
+1. Save same file via Dropbox on laptop and Orgzly. Try to `sync` note on Orgzly and if sync fails cuz modified on both clients, then `Force save` (long press on note) on Orgzly and then run oxit.
 
 2. Run oxit cmds on laptop
 
@@ -75,10 +80,17 @@ $ oxit sub-cmd --help
 #Test
 
 ```bash
-bash test/run-tests.sh
+export PYTHONPATH=/tmp/pypath
+python setup.py develop --install-dir /tmp/pypath
+
+# note valid Dropbox auth token needed in ~/.oxitconfig
+PATH=$PATH:/tmp/pypath bash  oxit/tests/run-tests.sh
 ```
 
 #License
 
+MIT.  See LICENSE file for full text.
+
 #Warranty
  
+None.
