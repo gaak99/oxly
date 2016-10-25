@@ -10,6 +10,7 @@ tramp
 
 #python
 *.pyc
+*.egg-info
 
 # Org-mode
 .org-id-locations
