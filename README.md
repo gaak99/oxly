@@ -65,19 +65,23 @@ If sync fails cuz the error msg says it's modified both locally and on Dropbox, 
 2. Run oxit cmds on laptop
 
 ```bash
-$ oxit clone dropbox://orgzly/oxit-merge-me-maybe.org 
+$ export OXIT_REPO=/tmp/myrepo
 
-$ oxit log orgzly/oxit-merge-me-maybe.org 
+$ oxit clone dropbox://foo.txt
 
-$ oxit diff --change-type head-headminus1 orgzly/oxit-merge-me-maybe.org 
+$ (optional) oxit log foo.txt
 
-$ oxit merge --change-type head-headminus1 orgzly/oxit-merge-me-maybe.org 
+$ (optional) oxit diff --rev-diff-type head-headminus1 foo.txt
 
-$ oxit add orgzly/oxit-merge-me-maybe.org
+$ oxit merge --rev-diff-type head-headminus1 foo.txt #merge last two revisions
 
-$ oxit status
+(note merged buffer should be saved in working tree dir, not under .oxit/)
 
-$ oxit push --no-dry-run orgzly/oxit-merge-me-maybe.org
+$ oxit add foo.txt
+
+$ (optional) oxit status
+
+$ oxit push --no-dry-run foo.txt
 ```
 
 #Usage
