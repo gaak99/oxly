@@ -223,6 +223,21 @@ class Oxit():
         for p in paths:
             self._add_one_path(p)
 
+    def _reset_one_path(self, path):
+        ind_path = self._get_pname_index() + '/' + path        
+        if not os.path.isfile(ind_path):
+            sys.exit('error: path does not exist in index (staging area): %s' % path)
+        os.unlink(ind_path)
+        
+    def reset(self, path):
+        self._debug('debug: start reset: %s' % path)
+        if path:
+            self._reset_one_path(path)
+            return
+        paths = self._get_index_paths()
+        for p in paths:
+            self._reset_one_path(p)
+            
     def _status_one_path(self, status_type, path):
         self._debug('debug _status_one_path %s %s' % (status_type, path))
         base_path = self._get_pname_home_base() + '/' + path
@@ -281,7 +296,7 @@ class Oxit():
             for h in hits:
                 print('\t%s' % h)
             if hits:
-                print('\nUse add subcmd to stage in index')
+                print('\nUse add subcmd to stage in index.')
         if status_type == 'all' or status_type == 'index-head':
             print('Files changed between index and head:')
             hits = []

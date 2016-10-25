@@ -24,6 +24,12 @@ def add(oxit, path):
     oxit.add(path)
 
 @cli.command()
+@click.argument('path')
+@click.pass_obj
+def reset(oxit, path):
+    oxit.reset(path)
+
+@cli.command()
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--nrevs',
               help='number of latest revs to download',
