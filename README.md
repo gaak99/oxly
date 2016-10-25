@@ -46,28 +46,38 @@ python setup.py install
 Generate an auth token from Dropbox app console
    `<https://www.dropbox.com/developers/apps>`
    
-Add it to `auth_token=$token` in ~/.oxitconfig in `[misc]` section.
+And add it to ~/.oxitconfig
+
+```
+[misc]
+auth_token=$token
+```
 
 ##Daily(ish)
 
-1. Save same file via Dropbox on laptop and Orgzly. Try to `sync` note on Orgzly and if sync fails cuz modified on both clients, then `Force save` (long press on note) on Orgzly and then run oxit.
+1. Save same file shared via Dropbox on laptop (~/Dropbox) and Orgzly (locally).
+Try to `sync` note on Orgzly.
+If sync fails cuz the error msg says it's modified both locally and on Dropbox, then `Force save` (long press on note) on Orgzly.
+*This* is the case we need oxit.
+
+   The forced save is safe cuz the prev saved edits will be saved by Dropbox as seperate revisions.
 
 2. Run oxit cmds on laptop
 
 ```bash
-$ oxit clone dropbox://orgzly/oxit-me-maybe.org 
+$ oxit clone dropbox://orgzly/oxit-merge-me-maybe.org 
 
-$ oxit log orgzly/oxit-me-maybe.org 
+$ oxit log orgzly/oxit-merge-me-maybe.org 
 
-$ oxit diff --change-type head-headminus1 orgzly/oxit-me-maybe.org 
+$ oxit diff --change-type head-headminus1 orgzly/oxit-merge-me-maybe.org 
 
-$ oxit merge --change-type head-headminus1 orgzly/oxit-me-maybe.org 
+$ oxit merge --change-type head-headminus1 orgzly/oxit-merge-me-maybe.org 
 
-$ oxit add orgzly/oxit-me-maybe.org
+$ oxit add orgzly/oxit-merge-me-maybe.org
 
 $ oxit status
 
-$ oxit push --no-dry-run orgzly/oxit-me-maybe.org
+$ oxit push --no-dry-run orgzly/oxit-merge-me-maybe.org
 ```
 
 #Usage
