@@ -6,7 +6,7 @@ Used daily by the author but that's total usage so far -- beta testers and comme
 
 #Intro
 
-oxit uses the Drobox API to observ/merge diffs of any two Dropbox file revisions with a git-style cli.
+oxit uses the Dropbox API to observ/merge diffs of any two Dropbox file revisions with a git-style cli.
 
 So you can edit/save the same file on multiple clients (laptop, Android Orgzly) and then later run oxit (on laptop) to observe the diffs and merge/resolve-conflicts if necessary.
 
@@ -56,8 +56,8 @@ auth_token=$token
 ##Daily(ish)
 
 1. Save same file shared via Dropbox on laptop (~/Dropbox) and Orgzly (locally).
-Try to `sync` note on Orgzly.
-If sync fails cuz the error msg says it's modified both locally and on Dropbox, then `Force save` (long press on note) on Orgzly.
+Select `Sync` notes on Orgzly.
+If sync fails cuz the Orgzly error msg says it's modified both local and remote, then `Force save` (long press on note) on Orgzly.
 *This* is the case we need oxit.
 
    The forced save is safe cuz the prev saved edits will be saved by Dropbox as seperate revisions.
@@ -75,7 +75,7 @@ $ (optional) oxit diff --rev-diff-type head-headminus1 foo.txt
 
 $ oxit merge --rev-diff-type head-headminus1 foo.txt #merge last two revisions
 
-(note merged buffer should be saved in working tree dir, not under .oxit/)
+(note merged buffer should be saved in repo working tree dir, not under .oxit/)
 
 $ oxit add foo.txt
 
@@ -83,6 +83,8 @@ $ (optional) oxit status
 
 $ oxit push --no-dry-run foo.txt
 ```
+
+3. On Orgzly select `Sync` to load merged/latest revision from Dropbox.
 
 #Usage
 ```bash
