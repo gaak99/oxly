@@ -6,6 +6,7 @@ import filecmp
 import ConfigParser
 import string
 import json
+import itertools
 import dropbox
 from dropbox.files import WriteMode
 from dropbox.exceptions import ApiError, AuthError
@@ -51,7 +52,7 @@ class Oxit():
             #print '\t%s  %s  %s' % (md.server_modified, md.rev, md.size)
             rev = md.rev
             #dest_data = dest_base + OXITSEP1 + rev
-            dest_data = self._get_pname_home_by_rev(src, rev)
+            dest_data = self._get_pname_by_rev(src, rev)
             self._debug('_download_data: dest_data %s' % dest_data)
             self.dbx.files_download_to_file(dest_data, src, rev)
 
@@ -85,14 +86,17 @@ class Oxit():
 
     def _get_pname_index(self):
         return  self._get_pname_home_base()  + '/' + OXITINDEX
-    
+
+    def _get_pname_index_path(self, path):
+        return  self._get_pname_index() + '/' + path
+
     def _get_pname_wt_path(self, path): #returns file path
         return self._get_pname_repo_base() + '/' + path
  
     def _get_pname_repo_base(self):
         return self.repo
 
-    def _get_pname_home_by_rev(self, path, rev='head'):
+    def _get_pname_by_rev(self, path, rev='head'):
         if rev == 'head':
             logs = self._get_log(path)
             h = logs[0]
@@ -117,7 +121,7 @@ class Oxit():
         return os.path.expanduser(mm_path)
 
     def _get_pname_home_revsdir(self, path):
-        self._debug('revsdir: path %s.' % path)
+        #self._debug('revsdir: path %s.' % path)
         base_path = self._get_pname_home_base()
         path_dir = os.path.dirname(path)
         path_f = os.path.basename(path)
@@ -135,7 +139,7 @@ class Oxit():
         wt_dir = os.path.dirname(self._get_pname_wt_path(src))
         make_sure_path_exists(wt_dir)
         wtf = open(self._get_pname_wt_path(src), "w")
-        head_path = self._get_pname_home_by_rev(src, headmd.rev)
+        head_path = self._get_pname_by_rev(src, headmd.rev)
         headf = open(os.path.expanduser(head_path), "r")
         wtf.write(headf.read())
         wtf.close()
@@ -237,79 +241,63 @@ class Oxit():
         paths = self._get_index_paths()
         for p in paths:
             self._reset_one_path(p)
-            
-    def _status_one_path(self, status_type, path):
-        self._debug('debug _status_one_path %s %s' % (status_type, path))
-        base_path = self._get_pname_home_base() + '/' + path
-        wt_path = self._get_pname_wt_path(path)
-        ind_path = self._get_pname_index() + '/' + path
 
-        # try:
-        #     logs = self._get_log(path)
-        # except IOError:
-        #     sys.exit('error: log file not found, repo exist and ok?')
-            
-        # head = logs[0]
-        # (rev, date, size) = head.split(OXITSEP1)
-        # head_path = base_path + OXITSEP1 + rev
-        head_path = self._get_pname_home_by_rev(path, 'head')
-
-        if not status_type:
-            status_type = 'all'
-        if status_type == 'wt-index':
-            self._debug('debug %s %s' % (wt_path, ind_path))
-            try:
-                if not filecmp.cmp(wt_path, ind_path):
-                    return True
-            except OSError:
-                if not filecmp.cmp(wt_path, head_path):
-                    return True
-            return False
-        if status_type == 'index-head':
-            self._debug('debug _status_one_path %s %s' % (ind_path, head_path))
-            try:
-                if not filecmp.cmp(ind_path, head_path):
-                    return True
-            except OSError:
-                pass
-        return False
+    def _get_wt_paths(self):
+        wt_dir = self._get_pname_repo_base()
+        self._debug('debug: _get_wt_paths: %s' % wt_dir)
+        return get_relpaths_recurse(wt_dir)
     
-    def status(self, status_type, path):
-        # paths with diffs
-        # a) index-head
-        # b) wt-index
-        # c) untracked NOT SUPPORTED (yet/ever?!?)
-        self._debug('debug: start status:')
-        if not status_type:
-            status_type = 'all'
-        paths = self._get_paths(path)
-        if not paths:
-            return
-        if not path:
-            return
-        if status_type == 'all' or status_type == 'wt-index':
-            print('Files changed between working tree and index:')
-            hits = []
-            for p in paths:
-                if self._status_one_path('wt-index', p):
-                    hits.append(p)
-            for h in hits:
-                print('\t%s' % h)
-            if hits:
-                print('\nUse add subcmd to stage in index.')
-        if status_type == 'all' or status_type == 'index-head':
-            print('Files changed between index and head:')
-            hits = []
-            for p in paths:
-                if self._status_one_path('index-head', p):
-                    hits.append(p)
-            for h in hits:
-                print('\t%s' % h)
-            if hits:
-                print('\nUse push subcmd to store in dropbox')
-        if status_type == 'untracked':
-            print('error: Not supported')
+    def status(self, path):
+        # status take2 - more git like #amirite
+        if path:
+            if not os.path.isfile(self._get_pname_wt_path(path)):
+                sys.exit('error: file name not found in repo wt -- spelled correctly?')
+            paths = [path]
+        else:
+            paths = self._get_wt_paths()
 
+        ipaths = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), paths)
+        if not paths:
+            print('warning: wt empty')
+
+        self._debug('debug status2 %s' % ipaths)
+        # changes staged but not pushed
+        print('Changes to be pushed:')
+        for p in ipaths:
+            self._debug('debug status2 p=%s' % p)
+            modded = False
+            #p_wt = self._get_pname_wt_path(p)
+            #p_wt = None if not os.path.isile(p) else p_wt
+            p_ind = self._get_pname_index_path(p)
+            p_ind = None if not os.path.isfile(p_ind) else p_ind
+            p_head = self._get_pname_by_rev(p)
+            p_head = None if not os.path.isfile(p_head) else p_head
+            if p_ind and p_head:
+                modded = not filecmp.cmp(p_ind, p_head)
+            if modded:
+                print('\tmodified: %s' % p)
+                 
+        # changes not staged
+        ipaths = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), paths)
+        print('\nChanges not staged:')
+        for p in ipaths:
+            self._debug('debug status2 p=%s' % p)
+            modded = False
+            p_wt = self._get_pname_wt_path(p)
+            p_wt = None if not os.path.isfile(p_wt) else p_wt
+            p_ind = self._get_pname_index_path(p)
+            p_ind = None if not os.path.isfile(p_ind) else p_ind
+            p_head = self._get_pname_by_rev(p)
+            p_head = None if not os.path.isfile(p_head) else p_head
+            if not p_wt:
+                print('warning: file does not exist in wt: %s' % p)
+            elif p_ind:
+                modded = not filecmp.cmp(p_wt, p_ind)
+            else:
+                modded = not filecmp.cmp(p_wt, p_head)
+            if modded:
+                print('\tmodified: %s' % p)
+                
     def _get_paths(self, path):
         #todo: recurse wt --> list
         return [path]
@@ -361,7 +349,7 @@ class Oxit():
         base_path = self._get_pname_home_base() + '/' + path
         fa = wt_path = self._get_pname_wt_path(path)
         ind_path = self._get_pname_index() + '/' + path        
-        fb = head_path =  self._get_pname_home_by_rev(path, 'head')
+        fb = head_path =  self._get_pname_by_rev(path, 'head')
         
         if rev_diff_type == 'wt-index':
             fb = ind_path
@@ -370,13 +358,13 @@ class Oxit():
         elif rev_diff_type == 'index-head':
             fa = ind_path
         elif rev_diff_type == 'head-headminus1':
-            fa = head1_path = self._get_pname_home_by_rev(path, 'headminus1')
+            fa = head1_path = self._get_pname_by_rev(path, 'headminus1')
         elif rev_diff_type == 'reva-revb':
             if not reva or not revb:
                 print('error: need reva and revb')
                 sys.exit(2)
-            fa = self._get_pname_home_by_rev(path, reva)
-            fb = self._get_pname_home_by_rev(path, revb)
+            fa = self._get_pname_by_rev(path, reva)
+            fb = self._get_pname_by_rev(path, revb)
         else:
             print('error: _change() help me jesus aka guido!!')
             sys.exit(99)
@@ -406,8 +394,11 @@ class Oxit():
         #   $rev||$date||$size
         log_path = self._get_pname_logpath(path)
         self._debug('debug get_log %s' % log_path)
-        with open(log_path) as f:  
-            content = f.readlines()
+        try:
+            with open(log_path) as f:  
+                content = f.readlines()
+        except IOError as err:
+            sys.exit('error: log file not found - clone complete ok?')
         return content
 
     def _log_one_path(self, path):
@@ -439,7 +430,7 @@ class Oxit():
         logs = self._get_log(path)
         head = logs[0] # currrent rev
         (rev, date, size) = head.split(OXITSEP1)
-        head_path = self._get_pname_home_by_rev(path, rev)# 'rev='head?
+        head_path = self._get_pname_by_rev(path, rev)# 'rev='head?
         if filecmp.cmp(index_path, head_path):
             print('%s: no change ... skipping ...' % path)
             return

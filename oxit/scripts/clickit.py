@@ -98,16 +98,10 @@ def push(oxit, dry_run, post_push_clone, path):
     oxit.push(dry_run, post_push_clone, path)
     
 @cli.command()
-@click.option('--status-type',
-              required=False,
-              type=click.Choice(['wt-index',
-                                 'index-head',
-                                 'untracked']),
-              help='wt=working tree, index=staging area, head=latest rev.')
 @click.argument('path', required=False, default=None)
 @click.pass_obj
-def status(oxit, status_type, path):
-    oxit.status(status_type, path)
+def status(oxit, path):
+    oxit.status(path)
 
 @cli.command()
 @click.argument('key', required=False)
