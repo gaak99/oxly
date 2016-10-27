@@ -491,7 +491,7 @@ class Oxit():
 
         token =  self._get_conf('auth_token')
         if not token:
-            sys.exit("ERROR: auth_token not in ur oxit conf file brah")            
+            sys.exit("ERROR: auth_token not in ur oxit conf file brah")
         self.dbx = dropbox.Dropbox(token)
         try:
             self.dbx.users_get_current_account()
@@ -506,6 +506,7 @@ class Oxit():
                 print('push dryrun: %s' % path)
             else:
                 self._push_one_path(path)
+                print('... cloned into %s.' % self.repo)
         else:
             if not paths:
                 print('Nothing to push')
@@ -515,6 +516,10 @@ class Oxit():
                     print('push dryrun: %s' % p)
                 else:
                     self._push_one_path(p)
+                    print('... %s cloned into %s.' % (p, self.repo))
+
+        if dry_run:
+            return
 
         dropbox_url = self._get_mmval('remote_origin')
         if dropbox_url  and post_push_clone: #need to read url from metameta dummy
