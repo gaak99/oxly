@@ -43,8 +43,10 @@ def clone(oxit, dry_run, src, nrevs):
 @click.option('--diff-cmd', required=False,
               envvar='DIFF_CMD',
               help='diff sh cmd, format: prog %s %s')
-@click.option('--reva', required=False, default='HEADMINUS1')
-@click.option('--revb', required=False, default='HEAD')
+@click.option('--reva', required=False, default='HEADMINUS1',
+              help='Defaults to HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are wd (working dir) and index (staging area).')
+@click.option('--revb', required=False, default='HEAD',
+              help='Defaults to HEAD (latest rev in Dropbox) ... ditto --reva.')
 @click.argument('path', required=True, default=None)
 @click.pass_obj
 def diff(oxit, diff_cmd, reva, revb, path):

@@ -71,7 +71,7 @@ $ oxit clone dropbox://foo.txt
 
 $ (optional) oxit log foo.txt
 
-$ (optional) oxit diff --rev-diff-type head-headminus1 foo.txt
+$ (optional) oxit diff foo.txt
 
 $ oxit merge --rev-diff-type head-headminus1 foo.txt #merge last two revisions
 
