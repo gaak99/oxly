@@ -43,18 +43,13 @@ def clone(oxit, dry_run, src, nrevs):
 @click.option('--diff-cmd', required=False,
               envvar='DIFF_CMD',
               help='diff sh cmd, format: prog %s %s')
-@click.option('--rev-diff-type', required=True,
-              type=click.Choice(['wt-index', 'wt-head',
-                                 'index-head',
-                                 'head-headminus1',  'reva-revb']),
-              help='wt=working tree, index=staging area, head=latest rev.')
+@click.option('--reva', required=False, default='HEADMINUS1')
+@click.option('--revb', required=False, default='HEAD')
 @click.argument('path', required=True, default=None)
-@click.argument('reva', required=False, default=None)
-@click.argument('revb', required=False, default=None)
 @click.pass_obj
-def diff(oxit, diff_cmd, rev_diff_type, path, reva, revb):
-    oxit.diff(diff_cmd, rev_diff_type, path, reva, revb)
-
+def diff(oxit, diff_cmd, reva, revb, path):
+    oxit.diff(diff_cmd, reva, revb, path)
+    
 @cli.command()
 @click.pass_obj
 def init(oxit):

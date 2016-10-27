@@ -24,7 +24,7 @@ oxit --oxit-repo $repo clone $url
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 oxit --oxit-repo $repo log $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo diff --rev-diff-type head-headminus1 $path
+oxit --oxit-repo $repo diff $path
 #oxit --oxit-repo $repo merge $path
 date >> $full_local_path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
@@ -32,7 +32,7 @@ oxit --oxit-repo $repo status $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 oxit --oxit-repo $repo add $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo diff --rev-diff-type index-head $path
+oxit --oxit-repo $repo diff --reva head --revb index $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 oxit --oxit-repo $repo status $path
 

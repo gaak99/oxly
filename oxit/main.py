@@ -257,7 +257,7 @@ class Oxit():
             paths = self._get_wt_paths()
 
         ipaths = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), paths)
-        if not paths:
+        if not ipaths:
             print('warning: wt empty')
 
         self._debug('debug status2 %s' % ipaths)
@@ -302,25 +302,48 @@ class Oxit():
         #todo: recurse wt --> list
         return [path]
     
-    def _diff_one_path(self, diff_cmd, rev_diff_type,  path, reva, revb):
-        (fa, fb) = self._change(rev_diff_type, path, reva, revb)
+    def _get_diff_pair(self, reva, revb, path):
+        def wd_or_index(rev, p):
+            if rev == 'wd':
+                return self._get_pname_wt_path(p)
+            if rev == 'index':
+                return self._get_pname_index_path(p)
+            return None
+            
+        ap = wd_or_index(reva, path)
+        bp = wd_or_index(revb, path)
+        ap = ap if ap else self._get_pname_by_rev(path, reva)
+        bp = bp if bp else self._get_pname_by_rev(path, revb)
+        return ap, bp
+        
+    def _diff_one_path(self, diff_cmd, reva, revb,  path):
+        (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), path)
         diff_cmd = diff_cmd if diff_cmd else DEFAULT_DIFF_CMD
-        self._debug('_diff_one_path: %s' % diff_cmd)
+        self._debug('debug _diff2_one_path: %s' % diff_cmd)
         shcmd = diff_cmd % (fa, fb)
-        self._debug(shcmd)
+        self._debug('debug _diff2_one_path: %s' % shcmd)
         os.system(shcmd)
 
-    def diff(self, diff_cmd, rev_diff_type,  path, reva, revb):
-        self._debug('debug: start diff:')
-        paths = self._get_paths(path)
-        l = len(paths)
-        for p in paths:
-            if l > 1:
-                print('%s:' % p)
-            self._diff_one_path(diff_cmd, rev_diff_type, p, reva, revb)
-            if l > 1:
-                print()
+    def diff(self, diff_cmd, reva, revb, path):
+        # diff take 2 - less clunky ui and lesss buggy to boot $diety willing
+        self._debug('debug2: start diff: %s %s %s' % (reva, revb, path))
+        if reva == revb:
+            sys.exit('error: reva and revb the same yo diggity just no')
 
+        if path:
+            if not os.path.isfile(self._get_pname_wt_path(path)):
+                sys.exit('error: file name not found in repo working dir -- spelled correctly?')
+            paths = [path]
+        else:
+            paths = self._get_wt_paths()
+
+        ipaths = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), paths)
+        if not ipaths:
+            print('warning: wt empty')
+        for p in ipaths:
+            self._debug('debug diff2 p=%s' % p)
+            self._diff_one_path(diff_cmd, reva, revb, path)
+        
     def merge(self, emacsclient_path, merge_cmd,  rev_diff_type,  path, reva, revb):
         qs = lambda(s): '\"' + s + '\"'
         (fa, fb) = self._change(rev_diff_type, path, reva, revb)
