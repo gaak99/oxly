@@ -70,19 +70,14 @@ def log(oxit, path):
 @click.option('--merge-cmd', required=False,
               envvar='MERGE_CMD',
               help='format: prog %s %s')
-@click.option('--rev-diff-type', required=True,
-              type=click.Choice(['wt-index', 'wt-head',
-                                 'index-head',
-                                 'head-headminus1',
-                                  'reva-revb']),
-              help='wt=working tree, index=staging area, head=latest rev.')
+@click.option('--reva', required=False, default='HEADMINUS1',
+              help='Defaults to HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are wd (working dir) and index (staging area).')
+@click.option('--revb', required=False, default='HEAD',
+              help='Defaults to HEAD (latest rev in Dropbox) ... ditto --reva.')
 @click.argument('path')
-@click.argument('reva', required=False, default=None)
-@click.argument('revb', required=False, default=None)
 @click.pass_obj
-def merge(oxit, emacsclient_path, merge_cmd, rev_diff_type, path, reva, revb):
-    oxit.merge(emacsclient_path, merge_cmd, rev_diff_type, path, reva, revb)
-
+def merge(oxit, emacsclient_path, merge_cmd, reva, revb, path):
+    oxit.merge(emacsclient_path, merge_cmd, reva, revb, path)
 
 @cli.command()
 @click.option('--dry-run/--no-dry-run', default=False)

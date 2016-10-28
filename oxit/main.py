@@ -343,10 +343,10 @@ class Oxit():
         for p in ipaths:
             self._debug('debug diff2 p=%s' % p)
             self._diff_one_path(diff_cmd, reva, revb, path)
-        
-    def merge(self, emacsclient_path, merge_cmd,  rev_diff_type,  path, reva, revb):
+
+    def merge(self, emacsclient_path, merge_cmd, reva, revb, path):
         qs = lambda(s): '\"' + s + '\"'
-        (fa, fb) = self._change(rev_diff_type, path, reva, revb)
+        (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), path)
         if merge_cmd:
             shcmd = merge_cmd % (qs(fa), qs(fb)) # quotes cant hurt, eh?
         elif emacsclient_path:
@@ -357,42 +357,6 @@ class Oxit():
         self._debug('debug merge: %s ' % shcmd)
         os.system(shcmd)
 
-    def _change(self, rev_diff_type,  path, reva, revb):
-        # Changes  made
-        #   a) wt  v index
-        #   b) index v head
-        #   c) wt v head
-        #   d) head-headminus1
-        #   e) reva v revb
-        self._debug('_change %s %s %s %s' % (rev_diff_type, path, reva, revb))
-        # base_path = self.repo + '/' + self.home + '/' + path
-        # fa = wt_path = self.repo + '/' + path
-        # ind_path = self.repo + '/' + self.home + '/' + OXITINDEX + '/' + path
-
-        base_path = self._get_pname_home_base() + '/' + path
-        fa = wt_path = self._get_pname_wt_path(path)
-        ind_path = self._get_pname_index() + '/' + path        
-        fb = head_path =  self._get_pname_by_rev(path, 'head')
-        
-        if rev_diff_type == 'wt-index':
-            fb = ind_path
-        elif rev_diff_type == 'wt-head':
-            pass
-        elif rev_diff_type == 'index-head':
-            fa = ind_path
-        elif rev_diff_type == 'head-headminus1':
-            fa = head1_path = self._get_pname_by_rev(path, 'headminus1')
-        elif rev_diff_type == 'reva-revb':
-            if not reva or not revb:
-                print('error: need reva and revb')
-                sys.exit(2)
-            fa = self._get_pname_by_rev(path, reva)
-            fb = self._get_pname_by_rev(path, revb)
-        else:
-            print('error: _change() help me jesus aka guido!!')
-            sys.exit(99)
-        return fa, fb
-            
     def init(self):
         base_path = self._get_pname_home_base()
         if os.path.isdir(base_path):
