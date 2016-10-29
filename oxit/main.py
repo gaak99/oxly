@@ -81,7 +81,7 @@ class Oxit():
                            key=lambda entry: entry.server_modified, reverse=True)
         return revisions #aka meta data
 
-    ### get_pname mini api start
+    ### start get_pname internal api
     ###
 
     def _get_pname_index(self):
@@ -130,20 +130,67 @@ class Oxit():
     def _get_pname_home_base(self): # see what u did there
         return self.repo + '/' + self.home
 
-    ### get_pname api end
+    def _get_pname_home_paths(self):
+        #home all paths list file path
+        path = self._get_pname_home_base() + '/.' + OXITSEP1 + 'filepaths'
+        return os.path.expanduser(path)
 
-    
-    def checkout(self, src, headmd):
-        #  "Checkout" current file aka cf
-        dest = self.repo
-        wt_dir = os.path.dirname(self._get_pname_wt_path(src))
-        make_sure_path_exists(wt_dir)
-        wtf = open(self._get_pname_wt_path(src), "w")
-        head_path = self._get_pname_by_rev(src, headmd.rev)
-        headf = open(os.path.expanduser(head_path), "r")
-        wtf.write(headf.read())
-        wtf.close()
-        headf.close()
+    ### end get_pname internal api
+
+    ### start _repohome_files internal api
+    def _repohome_files_put(self, path):
+        self._debug('debug _repohome_paths_put start %s' % path)
+        f = open(self._get_pname_home_paths(), "a")
+        f.write('%s\n' % path)
+        f.close()
+
+    def _repohome_files_get(self):
+        # return list of all relative path of files in home
+        self._debug('debug _repohome_paths_get start')
+        p = self._get_pname_home_paths()
+        try:
+            with open(p) as f:  
+                content = f.readlines()
+        except IOError as err:
+            sys.exit('internal error: repo home file of file paths not found')
+        self._debug('debug _repohome_paths_get end %s' % content)
+        return [x.rstrip() for x in content]
+    ### end _repohome_files internal api
+
+        
+    def checkout(self, file):
+        # Revert local wt changes w/staged version if it exists,
+        # else with HEAD.
+        if file:
+            if not os.path.isfile(self._get_pname_by_rev(file)):
+                sys.exit('error: file name not found in repo home -- spelled correctly?')
+            files = [file]
+        else:
+            files = self._repohome_files_get()
+
+        if not files:
+            sys.exit('internal error: checkout2  repo home empty')
+
+        make_sure_path_exists(self._get_pname_index())
+        for p in files:
+            self._debug('debug checkout2 p=`%s`' % p)
+            save_p_wt = p_wt = self._get_pname_wt_path(p)
+            p_wt = None if not os.path.isfile(p) else p_wt
+            p_ind = self._get_pname_index_path(p)
+            p_ind = None if not os.path.isfile(p_ind) else p_ind
+            p_head = self._get_pname_by_rev(p)
+            p_head = None if not os.path.isfile(p_head) else p_head
+            make_sure_path_exists(os.path.dirname(save_p_wt))
+            if p_wt:
+                if p_ind:
+                    self._debug('debug checkout2: cp ind wt')
+                    os.system('cp %s %s' % (p_ind, p_wt))
+                elif p_head:
+                    self._debug('debug checkout2: cp head wt')
+                    os.system('cp %s %s' % (p_head, p_wt))
+            else:
+                    self._debug('debug checkout2: cp head saved wt')
+                    os.system('cp %s %s' % (p_head, save_p_wt))
 
     def _get_conf(self, key):
         path = os.path.expanduser(self._conf)
@@ -153,11 +200,11 @@ class Oxit():
         cf.read(path)
         return cf.get('misc', key)
     
-    def clone(self, dry_run, src, nrevs):
-        # src is a file
-        # dest is a dir
-        dest = self.repo
-        self._debug('debug clone: %s %s' % (src, dest))
+    def clone(self, dry_run, src_url, nrevs):
+        # Given a dropbox url for one file (limitation at least for now),
+        # fetch the nrevs of the file and store locally in repo home and
+        # checkout HEAD to working dir.
+        self._debug('debug clone: %s' % (src_url))
 
         token =  self._get_conf('auth_token')
         if not token:
@@ -176,34 +223,32 @@ class Oxit():
 
         self.init()
 
-        # Src should-not-must be a dropbox url for chrimony sakes
-        src_base = src.lower() #XXX dbx case insensitive
-        #self.dropbox_url = src_base
-        if src_base.startswith('dropbox://'):
-            src_base = src_base[len('dropbox:/'):]  # keep single leading slash
-        if not src_base.startswith('/') or src_base.endswith('/'):
-            sys.exit('error: URL must have leading slash and no trailing slash\n')
+        # src_url should-not-must be a dropbox url for chrimony sakes
+        file = src_url.lower() #XXX dbx case insensitive
+        #self.dropbox_url = file
+        if file.startswith('dropbox://'):
+            file = file[len('dropbox:/'):]  # keep single leading slash
+        if not file.startswith('/') or file.endswith('/'):
+            sys.exit('error: URL must have leading slash and no trailing slash')
+        self._debug('debug clone: file=%s' % (file))
 
         # Get all revs' metadata
-        md_l = self._get_revs(src_base, nrevs)
-        dest_base = self._get_pname_home_base() + src_base
-        dest_base_dir = os.path.dirname(os.path.expanduser(dest_base))
-        make_sure_path_exists(dest_base_dir)
+        md_l = self._get_revs(file, nrevs)
+        repo_home = self._get_pname_home_base() + file
+        repo_home_dir = os.path.dirname(os.path.expanduser(repo_home))
+        make_sure_path_exists(repo_home_dir)
 
-        # Save meta meta
+        # Save meta meta & update master file path list
         mmf = open(self._get_pname_mmpath(), "a")
-        #self._debug('debug: clone late %s %s'% (mm_path, src))
-        mmf.write('remote_origin=%s\n' % src)
+        #self._debug('debug: clone late %s %s'% (mm_path, src_url))
+        mmf.write('remote_origin=%s\n' % src_url)
         mmf.close()
+        self._repohome_files_put(file.strip('/'))
 
-        # Cleanup prev clone
-        # index_path = OXITPREDIR + OXITDIR + '/' + OXITSEP2 + 'index'
-        # if os.path.isfile(index_path):
-        #     os.remove(index_path)
-
-        #self._download_data(md_l, src_base, dest, dest_base)
-        self._download_data(md_l, src_base, dest, nrevs)
-        self.checkout(src_base, md_l[0])        
+        # Finally! download the revs data and checkout themz to wt
+        self._debug('debug clone: download %d revs of %s to %s' % (nrevs, file, self.repo))
+        self._download_data(md_l, file, self.repo, nrevs)
+        self.checkout(file)
 
     def _add_one_path(self, path):
         # cp file from working tree to index tree dir
@@ -376,11 +421,11 @@ class Oxit():
         mmf.close()
 
     def _get_log(self, path):
-        self._debug('debug oxit.log start')
+        self._debug('debug _get_log start %s' % path)
         # on disk '$fileOXITSEP2log':
         #   $rev||$date||$size
         log_path = self._get_pname_logpath(path)
-        self._debug('debug get_log %s' % log_path)
+        self._debug('debug _get_log `%s`' % log_path)
         try:
             with open(log_path) as f:  
                 content = f.readlines()

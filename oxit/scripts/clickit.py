@@ -92,6 +92,12 @@ def push(oxit, dry_run, post_push_clone, path):
 @cli.command()
 @click.argument('path', required=False, default=None)
 @click.pass_obj
+def checkout(oxit, path):
+    oxit.checkout(path)
+
+@cli.command()
+@click.argument('path', required=False, default=None)
+@click.pass_obj
 def status(oxit, path):
     oxit.status(path)
 
