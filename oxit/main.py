@@ -54,7 +54,10 @@ class Oxit():
             #dest_data = dest_base + OXITSEP1 + rev
             dest_data = self._get_pname_by_rev(src, rev)
             self._debug('_download_data: dest_data %s' % dest_data)
-            self.dbx.files_download_to_file(dest_data, src, rev)
+            try:
+                self.dbx.files_download_to_file(dest_data, src, rev)
+            except Exception as err:
+                sys.exit('Call to Dropbox to download file data failed: %s' % err)
 
             # Save file's metadata
             #dest_md = dest + OXITSEP2 + 'md'
@@ -77,8 +80,11 @@ class Oxit():
 
     def _get_revs(self, path, nrevs=10):
         print("Finding available revisions on Dropbox...")
-        revisions = sorted(self.dbx.files_list_revisions(path, limit=nrevs).entries,
-                           key=lambda entry: entry.server_modified, reverse=True)
+        try:
+            revisions = sorted(self.dbx.files_list_revisions(path, limit=nrevs).entries,
+                               key=lambda entry: entry.server_modified, reverse=True)
+        except Exception as err:
+            sys.exit('Call to Dropbox to list file revisions failed: %s' % err)
         return revisions #aka meta data
 
     ### start get_pname internal api
@@ -218,8 +224,16 @@ class Oxit():
         try:
             self.dbx.users_get_current_account()
             self._debug('debug clone auth ok')
+        except dropbox.exceptions.HttpError as err:
+            sys.exit('Call to Dropbox failed: http error')
+        #except requests.exceptions.ConnectionError:
+            #sys.exit('Call to Dropbox failed: https connection')
         except AuthError as err:
             sys.exit("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
+        except dropbox.exceptions.ApiError as err:
+            sys.exit('Call to Dropbox failed: api error')
+        except Exception as err:
+            sys.exit('Call to Dropbox failed: %s' % err)
 
         if dry_run:
             print('dry-run: repo = %s' % self.repo)
