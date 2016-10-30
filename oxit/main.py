@@ -157,10 +157,20 @@ class Oxit():
         return [x.rstrip() for x in content]
     ### end _repohome_files internal api
 
+    def _get_fp_triple(self, fp):
+        # Given an fp, return a triple wt/index/head
+        # where each is a fp if it exists else None.
+        wt = self._get_pname_wt_path(fp)
+        wt = None if not os.path.isfile(fp) else wt
+        ind = self._get_pname_index_path(fp)
+        ind = None if not os.path.isfile(ind) else ind
+        head = self._get_pname_by_rev(fp)
+        head = None if not os.path.isfile(head) else head
+        return wt, ind, head
         
     def checkout(self, file):
         # Revert local wt changes w/staged version if it exists,
-        # else with HEAD.
+        # else with HEAD (aka `cp HEAD wt` regardless of wt file).
         if file:
             if not os.path.isfile(self._get_pname_by_rev(file)):
                 sys.exit('error: file name not found in repo home -- spelled correctly?')
@@ -174,13 +184,7 @@ class Oxit():
         make_sure_path_exists(self._get_pname_index())
         for p in files:
             self._debug('debug checkout2 p=`%s`' % p)
-            save_p_wt = p_wt = self._get_pname_wt_path(p)
-            p_wt = None if not os.path.isfile(p) else p_wt
-            p_ind = self._get_pname_index_path(p)
-            p_ind = None if not os.path.isfile(p_ind) else p_ind
-            p_head = self._get_pname_by_rev(p)
-            p_head = None if not os.path.isfile(p_head) else p_head
-            make_sure_path_exists(os.path.dirname(save_p_wt))
+            p_wt, p_ind, p_head = self._get_fp_triple(p)
             if p_wt:
                 if p_ind:
                     self._debug('debug checkout2: cp ind wt')
@@ -189,8 +193,9 @@ class Oxit():
                     self._debug('debug checkout2: cp head wt')
                     os.system('cp %s %s' % (p_head, p_wt))
             else:
-                    self._debug('debug checkout2: cp head saved wt')
-                    os.system('cp %s %s' % (p_head, save_p_wt))
+                    self._debug('debug checkout2 no wt: cp head wt')
+                    make_sure_path_exists(os.path.dirname(self._get_pname_wt_path(p)))
+                    os.system('cp %s %s' % (p_head, self._get_pname_wt_path(p)))
 
     def _get_conf(self, key):
         path = os.path.expanduser(self._conf)
@@ -231,7 +236,7 @@ class Oxit():
         if not file.startswith('/') or file.endswith('/'):
             sys.exit('error: URL must have leading slash and no trailing slash')
         self._debug('debug clone: file=%s' % (file))
-
+        
         # Get all revs' metadata
         md_l = self._get_revs(file, nrevs)
         repo_home = self._get_pname_home_base() + file
@@ -249,6 +254,7 @@ class Oxit():
         self._debug('debug clone: download %d revs of %s to %s' % (nrevs, file, self.repo))
         self._download_data(md_l, file, self.repo, nrevs)
         self.checkout(file)
+        print('... cloned into %s.' % self.repo)
 
     def _add_one_path(self, path):
         # cp file from working tree to index tree dir
@@ -311,12 +317,7 @@ class Oxit():
         for p in ipaths:
             self._debug('debug status2 p=%s' % p)
             modded = False
-            #p_wt = self._get_pname_wt_path(p)
-            #p_wt = None if not os.path.isile(p) else p_wt
-            p_ind = self._get_pname_index_path(p)
-            p_ind = None if not os.path.isfile(p_ind) else p_ind
-            p_head = self._get_pname_by_rev(p)
-            p_head = None if not os.path.isfile(p_head) else p_head
+            p_wt, p_ind, p_head = self._get_fp_triple(p)
             if p_ind and p_head:
                 modded = not filecmp.cmp(p_ind, p_head)
             if modded:
@@ -328,14 +329,11 @@ class Oxit():
         for p in ipaths:
             self._debug('debug status2 p=%s' % p)
             modded = False
-            p_wt = self._get_pname_wt_path(p)
-            p_wt = None if not os.path.isfile(p_wt) else p_wt
-            p_ind = self._get_pname_index_path(p)
-            p_ind = None if not os.path.isfile(p_ind) else p_ind
-            p_head = self._get_pname_by_rev(p)
-            p_head = None if not os.path.isfile(p_head) else p_head
+            p_wt, p_ind, p_head = self._get_fp_triple(p)
             if not p_wt:
-                print('warning: file does not exist in wt: %s' % p)
+                pass
+                #damned if ya do
+                #print('warning: file does not exist in wt: %s' % p)
             elif p_ind:
                 modded = not filecmp.cmp(p_wt, p_ind)
             else:
@@ -515,7 +513,6 @@ class Oxit():
                 print('push dryrun: %s' % path)
             else:
                 self._push_one_path(path)
-                print('... cloned into %s.' % self.repo)
         else:
             if not paths:
                 print('Nothing to push')
@@ -525,7 +522,6 @@ class Oxit():
                     print('push dryrun: %s' % p)
                 else:
                     self._push_one_path(p)
-                    print('... %s cloned into %s.' % (p, self.repo))
 
         if dry_run:
             return
