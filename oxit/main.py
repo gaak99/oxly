@@ -174,21 +174,21 @@ class Oxit():
         head = None if not os.path.isfile(head) else head
         return wt, ind, head
         
-    def checkout(self, file):
+    def checkout(self, filepath):
         # Revert local wt changes w/staged version if it exists,
-        # else with HEAD (aka `cp HEAD wt` regardless of wt file).
-        if file:
-            if not os.path.isfile(self._get_pname_by_rev(file)):
-                sys.exit('error: file name not found in repo home -- spelled correctly?')
-            files = [file]
+        # else with HEAD (aka `cp HEAD wt` regardless of wt filepath).
+        if filepath:
+            if not os.path.isfile(self._get_pname_by_rev(filepath)):
+                sys.exit('error: filepath name not found in repo home -- spelled correctly?')
+            fp_l = [filepath]
         else:
-            files = self._repohome_files_get()
+            fp_l = self._repohome_files_get()
 
-        if not files:
+        if not fp_l:
             sys.exit('internal error: checkout2  repo home empty')
 
         make_sure_path_exists(self._get_pname_index())
-        for p in files:
+        for p in fp_l:
             self._debug('debug checkout2 p=`%s`' % p)
             p_wt, p_ind, p_head = self._get_fp_triple(p)
             if p_wt:
@@ -285,11 +285,11 @@ class Oxit():
         make_sure_path_exists(index_path)
         os.system('cp %s %s' % (wt, index_path))
     
-    def add(self, path):
+    def add(self, filepath):
         # cp file from working tree to index tree
-        self._debug('debug: start add: %s' % path)
-        paths = self._get_paths(path)
-        for p in paths:
+        self._debug('debug: start add: %s' % filepath)
+        fp_l = self._get_paths(filepath)
+        for p in fp_l:
             self._add_one_path(p)
 
     def _reset_one_path(self, path):
@@ -298,13 +298,13 @@ class Oxit():
             sys.exit('error: path does not exist in index (staging area): %s' % path)
         os.unlink(ind_path)
         
-    def reset(self, path):
-        self._debug('debug: start reset: %s' % path)
-        if path:
-            self._reset_one_path(path)
+    def reset(self, filepath):
+        self._debug('debug: start reset: %s' % filepath)
+        if filepath:
+            self._reset_one_path(filepath)
             return
-        paths = self._get_index_paths()
-        for p in paths:
+        fp_l = self._get_index_paths()
+        for p in fp_l:
             self._reset_one_path(p)
 
     def _get_wt_paths(self):
@@ -312,23 +312,23 @@ class Oxit():
         self._debug('debug: _get_wt_paths: %s' % wt_dir)
         return get_relpaths_recurse(wt_dir)
     
-    def status(self, path):
+    def status(self, filepath):
         # status take2 - more git like #amirite
-        if path:
-            if not os.path.isfile(self._get_pname_wt_path(path)):
+        if filepath:
+            if not os.path.isfile(self._get_pname_wt_path(filepath)):
                 sys.exit('error: file name not found in repo wt -- spelled correctly?')
-            paths = [path]
+            fp_l = [filepath]
         else:
-            paths = self._get_wt_paths()
+            fp_l = self._get_wt_paths()
 
-        ipaths = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), paths)
-        if not ipaths:
+        ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), fp_l)
+        if not ifp_l:
             print('warning: wt empty')
 
-        self._debug('debug status2 %s' % ipaths)
+        self._debug('debug status2 %s' % ifp_l)
         # changes staged but not pushed
         print('Changes to be pushed:')
-        for p in ipaths:
+        for p in ifp_l:
             self._debug('debug status2 p=%s' % p)
             modded = False
             p_wt, p_ind, p_head = self._get_fp_triple(p)
@@ -338,9 +338,9 @@ class Oxit():
                 print('\tmodified: %s' % p)
                  
         # changes not staged
-        ipaths = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), paths)
+        ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), fp_l)
         print('\nChanges not staged:')
-        for p in ipaths:
+        for p in ifp_l:
             self._debug('debug status2 p=%s' % p)
             modded = False
             p_wt, p_ind, p_head = self._get_fp_triple(p)
@@ -381,29 +381,29 @@ class Oxit():
         self._debug('debug _diff2_one_path: %s' % shcmd)
         os.system(shcmd)
 
-    def diff(self, diff_cmd, reva, revb, path):
+    def diff(self, diff_cmd, reva, revb, filepath):
         # diff take 2 - less clunky ui and lesss buggy to boot $diety willing
-        self._debug('debug2: start diff: %s %s %s' % (reva, revb, path))
+        self._debug('debug2: start diff: %s %s %s' % (reva, revb, filepath))
         if reva == revb:
             sys.exit('error: reva and revb the same yo diggity just no')
 
-        if path:
-            if not os.path.isfile(self._get_pname_wt_path(path)):
+        if filepath:
+            if not os.path.isfile(self._get_pname_wt_path(filepath)):
                 sys.exit('error: file name not found in repo working dir -- spelled correctly?')
-            paths = [path]
+            fp_l = [filepath]
         else:
-            paths = self._get_wt_paths()
+            fp_l = self._get_wt_paths()
 
-        ipaths = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), paths)
-        if not ipaths:
+        ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), fp_l)
+        if not ifp_l:
             print('warning: wt empty')
-        for p in ipaths:
+        for p in ifp_l:
             self._debug('debug diff2 p=%s' % p)
-            self._diff_one_path(diff_cmd, reva, revb, path)
+            self._diff_one_path(diff_cmd, reva, revb, p)
 
-    def merge(self, emacsclient_path, merge_cmd, reva, revb, path):
+    def merge(self, emacsclient_path, merge_cmd, reva, revb, filepath):
         qs = lambda(s): '\"' + s + '\"'
-        (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), path)
+        (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), filepath)
         if merge_cmd:
             shcmd = merge_cmd % (qs(fa), qs(fb)) # quotes cant hurt, eh?
         elif emacsclient_path:
@@ -453,11 +453,11 @@ class Oxit():
             (rev, date, size) = l.split(OXITSEP1)
             print '%s\t%s\t%s' % (rev, date, size), #trailn comma ftw!
 
-    def log(self, path):
-        self._debug('debug: start log: %s' % path)
-        paths = self._get_paths(path)
-        l = len(paths)
-        for p in paths:
+    def log(self, filepath):
+        self._debug('debug: start log: %s' % filepath)
+        fp_l = self._get_paths(filepath)
+        l = len(fp_l)
+        for p in fp_l:
             if l > 1:
                 print('%s:' % p)
             self._log_one_path(p)
@@ -503,10 +503,10 @@ class Oxit():
         index_dir = self._get_pname_index()
         return get_relpaths_recurse(index_dir)
 
-    def push(self, dry_run, post_push_clone, path):
-        # Push path or all staged paths upstream
-        paths = self._get_index_paths()
-        self._debug('debug push: %s' % paths)
+    def push(self, dry_run, post_push_clone, filepath):
+        # Push filepath or all staged filepaths upstream
+        fp_l = self._get_index_paths()
+        self._debug('debug push: %s' % fp_l)
         if post_push_clone:
                     self._debug('debug post_push_clone true')
 
@@ -519,19 +519,21 @@ class Oxit():
             self._debug('debug push auth ok')
         except AuthError as err:
             sys.exit("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
-
-        if path:
-            if path not in [s.strip('./') for s in paths]:
-                sys.exit('push %s not in index' % path)
+        except Exception as e:
+            sys.exit("ERROR: push call to Dropbox fail: %s" % e)
+            
+        if filepath:
+            if filepath not in [s.strip('./') for s in fp_l]:
+                sys.exit('push %s not in index' % filepath)
             if dry_run:
-                print('push dryrun: %s' % path)
+                print('push dryrun: %s' % filepath)
             else:
-                self._push_one_path(path)
+                self._push_one_path(filepath)
         else:
-            if not paths:
+            if not fp_l:
                 print('Nothing to push')
                 return
-            for p in paths:
+            for p in fp_l:
                 if dry_run:
                     print('push dryrun: %s' % p)
                 else:

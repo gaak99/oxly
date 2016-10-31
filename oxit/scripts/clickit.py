@@ -2,7 +2,7 @@
 import click
 from oxit.main import Oxit
 
-__version__ = "0.5.0" #xxx mv to setup?
+__version__ = "0.6" #xxx mv to setup?
 
 @click.group()
 @click.version_option(version=__version__)
@@ -18,16 +18,16 @@ def cli(ctx, oxit_conf, oxit_repo, oxit_home, debug):
     ctx.obj = Oxit(oxit_conf, oxit_repo, oxit_home, debug)
 
 @cli.command()
-@click.argument('path')
+@click.argument('filepath')
 @click.pass_obj
-def add(oxit, path):
-    oxit.add(path)
+def add(oxit, filepath):
+    oxit.add(filepath)
 
 @cli.command()
-@click.argument('path')
+@click.argument('filepath')
 @click.pass_obj
-def reset(oxit, path):
-    oxit.reset(path)
+def reset(oxit, filepath):
+    oxit.reset(filepath)
 
 @cli.command()
 @click.option('--dry-run/--no-dry-run', default=False)
@@ -47,10 +47,10 @@ def clone(oxit, dry_run, src, nrevs):
               help='Defaults to HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are wd (working dir) and index (staging area).')
 @click.option('--revb', required=False, default='HEAD',
               help='Defaults to HEAD (latest rev in Dropbox) ... ditto --reva.')
-@click.argument('path', required=True, default=None)
+@click.argument('filepath', required=True, default=None)
 @click.pass_obj
-def diff(oxit, diff_cmd, reva, revb, path):
-    oxit.diff(diff_cmd, reva, revb, path)
+def diff(oxit, diff_cmd, reva, revb, filepath):
+    oxit.diff(diff_cmd, reva, revb, filepath)
     
 @cli.command()
 @click.pass_obj
@@ -58,10 +58,10 @@ def init(oxit):
     oxit.init()
 
 @cli.command()
-@click.argument('path', required=True, default=None)
+@click.argument('filepath', required=True, default=None)
 @click.pass_obj
-def log(oxit, path):
-    oxit.log(path)
+def log(oxit, filepath):
+    oxit.log(filepath)
 
 @cli.command()
 @click.option('--emacsclient-path', required=False,
@@ -74,32 +74,32 @@ def log(oxit, path):
               help='Defaults to HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are wd (working dir) and index (staging area).')
 @click.option('--revb', required=False, default='HEAD',
               help='Defaults to HEAD (latest rev in Dropbox) ... ditto --reva.')
-@click.argument('path')
+@click.argument('filepath')
 @click.pass_obj
-def merge(oxit, emacsclient_path, merge_cmd, reva, revb, path):
-    oxit.merge(emacsclient_path, merge_cmd, reva, revb, path)
+def merge(oxit, emacsclient_path, merge_cmd, reva, revb, filepath):
+    oxit.merge(emacsclient_path, merge_cmd, reva, revb, filepath)
 
 @cli.command()
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--post-push-clone/--no-post-push-clone',
               help='After success on push, (no) resync w/Dropbox.)',
               default=True)
-@click.argument('path', required=False, default=None)
+@click.argument('filepath', required=False, default=None)
 @click.pass_obj
-def push(oxit, dry_run, post_push_clone, path):
-    oxit.push(dry_run, post_push_clone, path)
+def push(oxit, dry_run, post_push_clone, filepath):
+    oxit.push(dry_run, post_push_clone, filepath)
     
 @cli.command()
-@click.argument('path', required=False, default=None)
+@click.argument('filepath', required=False, default=None)
 @click.pass_obj
-def checkout(oxit, path):
-    oxit.checkout(path)
+def checkout(oxit, filepath):
+    oxit.checkout(filepath)
 
 @cli.command()
-@click.argument('path', required=False, default=None)
+@click.argument('filepath', required=False, default=None)
 @click.pass_obj
-def status(oxit, path):
-    oxit.status(path)
+def status(oxit, filepath):
+    oxit.status(filepath)
 
 @cli.command()
 @click.argument('key', required=False)
