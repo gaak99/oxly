@@ -91,7 +91,7 @@ class Oxit():
     ###
 
     def _get_pname_index(self):
-        return  self._get_pname_home_base()  + '/' + '.' + OXITSEP1 + OXITINDEX
+        return  self._get_pname_home_base()  + '/' + '.oxit' + OXITSEP1 + OXITINDEX
 
     def _get_pname_index_path(self, path):
         return  self._get_pname_index() + '/' + path
@@ -123,7 +123,7 @@ class Oxit():
         return self._get_pname_home_revsdir(path) + '/' + 'log'
     
     def _get_pname_mmpath(self): #home metameta file path
-        mm_path = self._get_pname_home_base() + '/.' + OXITSEP1 + OXITMETAMETA
+        mm_path = self._get_pname_home_base() + '/.oxit' + OXITSEP1 + OXITMETAMETA
         return os.path.expanduser(mm_path)
 
     def _get_pname_home_revsdir(self, path):
@@ -138,7 +138,7 @@ class Oxit():
 
     def _get_pname_home_paths(self):
         #home all paths list file path
-        path = self._get_pname_home_base() + '/.' + OXITSEP1 + 'filepaths'
+        path = self._get_pname_home_base() + '/.oxit' + OXITSEP1 + 'filepaths'
         return os.path.expanduser(path)
 
     ### end get_pname internal api
