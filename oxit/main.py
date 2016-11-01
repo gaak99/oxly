@@ -12,7 +12,8 @@ from dropbox.files import WriteMode
 from dropbox.exceptions import ApiError, AuthError
 from .utils import make_sure_path_exists, get_relpaths_recurse
 
-__version__ = "0.6" #xxx mv to setup
+#__version__ = "0.6" #xxx mv to setup
+from . import __version__
 
 OXITDIRVERSION = "1"
 OXITSEP1 = '::'

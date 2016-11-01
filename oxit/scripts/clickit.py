@@ -2,7 +2,8 @@
 import click
 from oxit.main import Oxit
 
-__version__ = "0.6" #xxx mv to setup?
+#__version__ = "0.7" #xxx mv to setup?
+from . import __version__
 
 @click.group()
 @click.version_option(version=__version__)
