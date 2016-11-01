@@ -12,13 +12,13 @@ from dropbox.files import WriteMode
 from dropbox.exceptions import ApiError, AuthError
 from .utils import make_sure_path_exists, get_relpaths_recurse
 
-__version__ = "0.5.0" #xxx mv to setup
+__version__ = "0.6" #xxx mv to setup
 
 OXITDIRVERSION = "1"
 OXITSEP1 = '::'
 OXITSEP2 = ':::'
 OXITMETAMETA = 'metameta'
-OXITINDEX = '.index'
+OXITINDEX = 'index'
 
 # Default merge cmd
 MERGE_BIN = "emacsclient"
@@ -91,7 +91,7 @@ class Oxit():
     ###
 
     def _get_pname_index(self):
-        return  self._get_pname_home_base()  + '/' + OXITINDEX
+        return  self._get_pname_home_base()  + '/' + '.' + OXITSEP1 + OXITINDEX
 
     def _get_pname_index_path(self, path):
         return  self._get_pname_index() + '/' + path
