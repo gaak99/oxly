@@ -167,7 +167,8 @@ class Oxit():
         # Given an fp, return a triple wt/index/head
         # where each is a fp if it exists else None.
         wt = self._get_pname_wt_path(fp)
-        wt = None if not os.path.isfile(fp) else wt
+        self._debug('debug triple wt: %s' % wt)
+        wt = None if not os.path.isfile(wt) else wt
         ind = self._get_pname_index_path(fp)
         ind = None if not os.path.isfile(ind) else ind
         head = self._get_pname_by_rev(fp)
@@ -344,6 +345,8 @@ class Oxit():
             self._debug('debug status2 p=%s' % p)
             modded = False
             p_wt, p_ind, p_head = self._get_fp_triple(p)
+            self._debug('debug status triple wt: %s' % p_wt)
+            self._debug('debug status triple head: %s' % p_head)
             if not p_wt:
                 pass
                 #damned if ya do
@@ -351,6 +354,8 @@ class Oxit():
             elif p_ind:
                 modded = not filecmp.cmp(p_wt, p_ind)
             else:
+                self._debug('debug status else wt: %s' % p_wt)
+                self._debug('debug status else head: %s' % p_head)
                 modded = not filecmp.cmp(p_wt, p_head)
             if modded:
                 print('\tmodified: %s' % p)
@@ -526,7 +531,10 @@ class Oxit():
             if filepath not in [s.strip('./') for s in fp_l]:
                 sys.exit('push %s not in index' % filepath)
             if dry_run:
-                print('push dryrun: %s' % filepath)
+                print('push dryrun filepath: %s' % filepath)
+                print('push dryrun from local repo: %s' % self.repo)
+                print('push dryrun to remote repo: %s' %
+                      self._get_mmval('remote_origin') )
             else:
                 self._push_one_path(filepath)
         else:
@@ -535,7 +543,10 @@ class Oxit():
                 return
             for p in fp_l:
                 if dry_run:
-                    print('push dryrun: %s' % p)
+                    print('push dryrun filepath: %s' % filepath)
+                    print('push dryrun from local repo: %s' % self.repo)
+                    print('push dryrun to remote repo: %s' %
+                      self._get_mmval('remote_origin') )
                 else:
                     self._push_one_path(p)
 
