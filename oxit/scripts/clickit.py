@@ -8,14 +8,12 @@ __version__ = "0.6" #xxx mv to setup?
 @click.version_option(version=__version__)
 @click.option('--oxit-conf', envvar='OXIT_CONF', default='~/.oxitconfig')
 @click.option('--oxit-repo', envvar='OXIT_REPO', default='.',
-              help='Dir to store working tree and oxit-home.')
-@click.option('--oxit-home', envvar='OXIT_HOME', default='.oxit',
-              help='Dir within local repo to store all revs and meta data.')
+              help='Dir to store working tree and .oxit.')
 @click.option('--debug/--no-debug', default=False,
                         envvar='OXIT_DEBUG')
 @click.pass_context
-def cli(ctx, oxit_conf, oxit_repo, oxit_home, debug):
-    ctx.obj = Oxit(oxit_conf, oxit_repo, oxit_home, debug)
+def cli(ctx, oxit_conf, oxit_repo, debug):
+    ctx.obj = Oxit(oxit_conf, oxit_repo, debug)
 
 @cli.command()
 @click.argument('filepath')

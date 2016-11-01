@@ -17,6 +17,7 @@ __version__ = "0.6" #xxx mv to setup
 OXITDIRVERSION = "1"
 OXITSEP1 = '::'
 OXITSEP2 = ':::'
+OXITHOME = '.oxit'
 OXITMETAMETA = 'metameta'
 OXITINDEX = 'index'
 
@@ -28,10 +29,10 @@ DEFAULT_MERGE_CMD = MERGE_BIN + ' ' + MERGE_EVAL + ' \'(' + MERGE_EVALFUNC + ' %
 DEFAULT_DIFF_CMD = 'diff %s %s'
 
 class Oxit():
-    def __init__(self, oxit_conf, oxit_repo, oxit_home, debug):
+    def __init__(self, oxit_conf, oxit_repo, debug):
         self.debug = debug
         self.repo = oxit_repo 
-        self.home = oxit_home
+        self.home = OXITHOME
         self._conf = oxit_conf
         self.dbx = None
         
@@ -237,8 +238,8 @@ class Oxit():
             sys.exit('Call to Dropbox failed: %s' % err)
 
         if dry_run:
-            print('dry-run: repo = %s' % self.repo)
-            print('dry-run: home = %s' % self.home)
+            print('clone dry-run: remote repo = %s' % src_url)
+            print('clone dry-run: local repo = %s' % self.repo)
             return
 
         self.init()
