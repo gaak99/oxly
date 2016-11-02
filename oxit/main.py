@@ -329,7 +329,7 @@ class Oxit():
 
         self._debug('debug status2 %s' % ifp_l)
         # changes staged but not pushed
-        print('Changes to be pushed:')
+        mods = 0
         for p in ifp_l:
             self._debug('debug status2 p=%s' % p)
             modded = False
@@ -337,11 +337,14 @@ class Oxit():
             if p_ind and p_head:
                 modded = not filecmp.cmp(p_ind, p_head)
             if modded:
+                mods += 1
+                if mods == 1:
+                    print('Changes to be pushed:')
                 print('\tmodified: %s' % p)
                  
         # changes not staged
         ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), fp_l)
-        print('\nChanges not staged:')
+        mods = 0
         for p in ifp_l:
             self._debug('debug status2 p=%s' % p)
             modded = False
@@ -359,6 +362,9 @@ class Oxit():
                 self._debug('debug status else head: %s' % p_head)
                 modded = not filecmp.cmp(p_wt, p_head)
             if modded:
+                mods += 1
+                if mods == 1:
+                    print('\nChanges not staged:')
                 print('\tmodified: %s' % p)
                 
     def _get_paths(self, path):
