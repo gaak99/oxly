@@ -1,4 +1,7 @@
 
+
+from . import __version__
+
 import sys
 import os
 import random
@@ -12,8 +15,6 @@ from dropbox.files import WriteMode
 from dropbox.exceptions import ApiError, AuthError
 from .utils import make_sure_path_exists, get_relpaths_recurse
 
-from . import __version__
-
 OXITDIRVERSION = "1"
 OXITSEP1 = '::'
 OXITSEP2 = ':::'
@@ -25,15 +26,17 @@ OXITINDEX = 'index'
 MERGE_BIN = "emacsclient"
 MERGE_EVAL  = "--eval"
 MERGE_EVALFUNC = "ediff-merge-files"
-DEFAULT_MERGE_CMD = MERGE_BIN + ' ' + MERGE_EVAL + ' \'(' + MERGE_EVALFUNC + ' %s %s'  + ')\''
+DEFAULT_MERGE_CMD = MERGE_BIN + ' ' + MERGE_EVAL + ' \'('\
+                    + MERGE_EVALFUNC + ' %s %s'  + ')\''
 DEFAULT_DIFF_CMD = 'diff %s %s'
+
 
 class Oxit():
     def __init__(self, oxit_conf, oxit_repo, debug):
         self.debug = debug
         self.repo = oxit_repo 
         self.home = OXITHOME
-        self._conf = oxit_conf
+        self.conf = oxit_conf
         self.dbx = None
         
     def _debug(self, s):
@@ -42,7 +45,6 @@ class Oxit():
             
     def _download_data(self, md_l, src, dest, nrevs):
         # Save log info
-        #log_path = dest_base + OXITSEP2 + 'log'
         log_path = self._get_pname_logpath(src)
         if os.path.isfile(log_path):
             os.remove(log_path)
@@ -50,9 +52,7 @@ class Oxit():
         make_sure_path_exists(os.path.dirname(log_path))
         logf = open(os.path.expanduser(log_path), "wb")
         for md in md_l:
-            #print '\t%s  %s  %s' % (md.server_modified, md.rev, md.size)
             rev = md.rev
-            #dest_data = dest_base + OXITSEP1 + rev
             dest_data = self._get_pname_by_rev(src, rev)
             self._debug('_download_data: dest_data %s' % dest_data)
             try:
@@ -60,18 +60,6 @@ class Oxit():
             except Exception as err:
                 sys.exit('Call to Dropbox to download file data failed: %s' % err)
 
-            # Save file's metadata
-            #dest_md = dest + OXITSEP2 + 'md'
-            #dest_md = _get_pname_mdpath(src)
-            #print '\t%s' % to_path_md
-            #dest_file_md = open(os.path.expanduser(dest_md), "wb")
-            # t = md.server_modified
-            # md_d = dict([('rev', md.rev),
-            #              ('server_modified', t.strftime('%m/%d/%Y %H:%M:%S')),
-            #              ('size', md.size)])
-            # json.dump(md_d, open(dest_md, 'w'))
-
-            # Log entry "xOXITSEP1yOXITSEP1z".split (OXITSEP1)
             logf.write('%s%s%s%s%s\n' % (rev,
                                                    OXITSEP1,
                                                    md.server_modified,
@@ -82,8 +70,10 @@ class Oxit():
     def _get_revs(self, path, nrevs=10):
         print("Finding available revisions on Dropbox...")
         try:
-            revisions = sorted(self.dbx.files_list_revisions(path, limit=nrevs).entries,
-                               key=lambda entry: entry.server_modified, reverse=True)
+            revisions = sorted(self.dbx.files_list_revisions(path,
+                                                             limit=nrevs).entries,
+                               key=lambda entry: entry.server_modified,
+                               reverse=True)
         except Exception as err:
             sys.exit('Call to Dropbox to list file revisions failed: %s' % err)
         return revisions #aka meta data
@@ -92,7 +82,8 @@ class Oxit():
     ###
 
     def _get_pname_index(self):
-        return  self._get_pname_home_base()  + '/' + '.oxit' + OXITSEP1 + OXITINDEX
+        return  self._get_pname_home_base()  + '/' + '.oxit'\
+            + OXITSEP1 + OXITINDEX
 
     def _get_pname_index_path(self, path):
         return  self._get_pname_index() + '/' + path
@@ -123,18 +114,18 @@ class Oxit():
     def _get_pname_logpath(self, path):
         return self._get_pname_home_revsdir(path) + '/' + 'log'
     
-    def _get_pname_mmpath(self): #home metameta file path
-        mm_path = self._get_pname_home_base() + '/.oxit' + OXITSEP1 + OXITMETAMETA
+    def _get_pname_mmpath(self):
+        mm_path = self._get_pname_home_base() + '/.oxit'\
+                  + OXITSEP1 + OXITMETAMETA
         return os.path.expanduser(mm_path)
 
     def _get_pname_home_revsdir(self, path):
-        #self._debug('revsdir: path %s.' % path)
         base_path = self._get_pname_home_base()
         path_dir = os.path.dirname(path)
         path_f = os.path.basename(path)
-        return base_path + '/' + path_dir + '/.oxit' + OXITSEP1 + path_f # home pn v1
+        return base_path + '/' + path_dir + '/.oxit' + OXITSEP1 + path_f
 
-    def _get_pname_home_base(self): # see what u did there
+    def _get_pname_home_base(self):
         return self.repo + '/' + self.home
 
     def _get_pname_home_paths(self):
@@ -152,7 +143,7 @@ class Oxit():
         f.close()
 
     def _repohome_files_get(self):
-        # return list of all relative path of files in home
+        #Return list of all relative path of files in home
         self._debug('debug _repohome_paths_get start')
         p = self._get_pname_home_paths()
         try:
@@ -177,8 +168,12 @@ class Oxit():
         return wt, ind, head
         
     def checkout(self, filepath):
-        # Revert local wt changes w/staged version if it exists,
-        # else with HEAD (aka `cp HEAD wt` regardless of wt filepath).
+        """Checkout files to working dir (wd).
+
+        Also revert local wd changes w/staged version if it exists.
+        Keyword aruments:
+        filepath -- relative path of file to checkout
+        """
         if filepath:
             if not os.path.isfile(self._get_pname_by_rev(filepath)):
                 sys.exit('error: filepath name not found in repo home -- spelled correctly?')
@@ -206,9 +201,9 @@ class Oxit():
                     os.system('cp %s %s' % (p_head, self._get_pname_wt_path(p)))
 
     def _get_conf(self, key):
-        path = os.path.expanduser(self._conf)
+        path = os.path.expanduser(self.conf)
         if not os.path.isfile(path):
-            sys.exit('error: conf file not found: %s' % self._conf)
+            sys.exit('error: conf file not found: %s' % self.conf)
         cf = ConfigParser.RawConfigParser()
         cf.read(path)
         return cf.get('misc', key)
@@ -246,7 +241,6 @@ class Oxit():
 
         # src_url should-not-must be a dropbox url for chrimony sakes
         file = src_url.lower() #XXX dbx case insensitive
-        #self.dropbox_url = file
         if file.startswith('dropbox://'):
             file = file[len('dropbox:/'):]  # keep single leading slash
         if not file.startswith('/') or file.endswith('/'):
@@ -261,7 +255,6 @@ class Oxit():
 
         # Save meta meta & update master file path list
         mmf = open(self._get_pname_mmpath(), "a")
-        #self._debug('debug: clone late %s %s'% (mm_path, src_url))
         mmf.write('remote_origin=%s\n' % src_url)
         mmf.close()
         self._repohome_files_put(file.strip('/'))
@@ -274,14 +267,10 @@ class Oxit():
 
     def _add_one_path(self, path):
         # cp file from working tree to index tree dir
-        #base_path = self.repo
-        #index_path = base_path + '/' + self.home + '/' + OXITINDEX
         index_path = self._get_pname_index()
-        #index = index_path # isdir
         dp = os.path.dirname(path)
         if dp:
             index_path = index_path + '/' + dp
-        #wt = base_path + '/' + path # is file
         wt = self._get_pname_wt_path(path)
         self._debug('debug _add_one_path cp %s %s' % (wt, index_path))
         make_sure_path_exists(index_path)
@@ -353,8 +342,8 @@ class Oxit():
             self._debug('debug status triple head: %s' % p_head)
             if not p_wt:
                 pass
-                #damned if ya do
-                #print('warning: file does not exist in wt: %s' % p)
+                # Damned if ya do
+                # print('warning: file does not exist in wt: %s' % p)
             elif p_ind:
                 modded = not filecmp.cmp(p_wt, p_ind)
             else:
@@ -366,7 +355,8 @@ class Oxit():
                 if mods == 1:
                     print('\nChanges not staged:')
                 print('\tmodified: %s' % p)
-                
+
+    # xxx still needed??
     def _get_paths(self, path):
         #todo: recurse wt --> list
         return [path]
