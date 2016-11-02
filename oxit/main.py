@@ -24,25 +24,25 @@ OXITINDEX = 'index'
 
 # Default merge cmd
 MERGE_BIN = "emacsclient"
-MERGE_EVAL  = "--eval"
+MERGE_EVAL = "--eval"
 MERGE_EVALFUNC = "ediff-merge-files"
 DEFAULT_MERGE_CMD = MERGE_BIN + ' ' + MERGE_EVAL + ' \'('\
-                    + MERGE_EVALFUNC + ' %s %s'  + ')\''
+                    + MERGE_EVALFUNC + ' %s %s' + ')\''
 DEFAULT_DIFF_CMD = 'diff %s %s'
 
 
 class Oxit():
     def __init__(self, oxit_conf, oxit_repo, debug):
         self.debug = debug
-        self.repo = oxit_repo 
+        self.repo = oxit_repo
         self.home = OXITHOME
         self.conf = oxit_conf
         self.dbx = None
-        
+
     def _debug(self, s):
         if self.debug:
-            print(s)# xxx stderr?
-            
+            print(s)  # xxx stderr?
+
     def _download_data(self, md_l, src, dest, nrevs):
         # Save log info
         log_path = self._get_pname_logpath(src)
@@ -58,13 +58,14 @@ class Oxit():
             try:
                 self.dbx.files_download_to_file(dest_data, src, rev)
             except Exception as err:
-                sys.exit('Call to Dropbox to download file data failed: %s' % err)
+                sys.exit('Call to Dropbox to download file data failed: %s'
+                         % err)
 
             logf.write('%s%s%s%s%s\n' % (rev,
-                                                   OXITSEP1,
-                                                   md.server_modified,
-                                                   OXITSEP1,
-                                                   md.size))
+                                         OXITSEP1,
+                                         md.server_modified,
+                                         OXITSEP1,
+                                         md.size))
         logf.close()
 
     def _get_revs(self, path, nrevs=10):
@@ -76,21 +77,21 @@ class Oxit():
                                reverse=True)
         except Exception as err:
             sys.exit('Call to Dropbox to list file revisions failed: %s' % err)
-        return revisions #aka meta data
+        return revisions
 
-    ### start get_pname internal api
-    ###
+    # Start get_pname internal api
+    #
 
     def _get_pname_index(self):
-        return  self._get_pname_home_base()  + '/' + '.oxit'\
+        return self._get_pname_home_base() + '/' + '.oxit'\
             + OXITSEP1 + OXITINDEX
 
     def _get_pname_index_path(self, path):
-        return  self._get_pname_index() + '/' + path
+        return self._get_pname_index() + '/' + path
 
-    def _get_pname_wt_path(self, path): #returns file path
+    def _get_pname_wt_path(self, path):
         return self._get_pname_repo_base() + '/' + path
- 
+
     def _get_pname_repo_base(self):
         return self.repo
 
@@ -105,15 +106,15 @@ class Oxit():
                 sys.exit('error:  only one rev so far so no headminus1')
             h = logs[1]
             (rev, date, size) = h.split(OXITSEP1)
-  
+
         self._debug('by_rev: rev=%s' % rev)
         pn_revdir = self._get_pname_home_revsdir(path)
         make_sure_path_exists(pn_revdir)
-        return  pn_revdir + '/' + rev 
+        return pn_revdir + '/' + rev
 
     def _get_pname_logpath(self, path):
         return self._get_pname_home_revsdir(path) + '/' + 'log'
-    
+
     def _get_pname_mmpath(self):
         mm_path = self._get_pname_home_base() + '/.oxit'\
                   + OXITSEP1 + OXITMETAMETA
@@ -129,13 +130,12 @@ class Oxit():
         return self.repo + '/' + self.home
 
     def _get_pname_home_paths(self):
-        #home all paths list file path
         path = self._get_pname_home_base() + '/.oxit' + OXITSEP1 + 'filepaths'
         return os.path.expanduser(path)
 
-    ### end get_pname internal api
+    # End get_pname internal api
 
-    ### start _repohome_files internal api
+    # Start _repohome_files internal api
     def _repohome_files_put(self, path):
         self._debug('debug _repohome_paths_put start %s' % path)
         f = open(self._get_pname_home_paths(), "a")
@@ -143,17 +143,18 @@ class Oxit():
         f.close()
 
     def _repohome_files_get(self):
-        #Return list of all relative path of files in home
+        # Return list of all relative path of files in home
         self._debug('debug _repohome_paths_get start')
         p = self._get_pname_home_paths()
         try:
-            with open(p) as f:  
+            with open(p) as f:
                 content = f.readlines()
         except IOError as err:
             sys.exit('internal error: repo home file of file paths not found')
         self._debug('debug _repohome_paths_get end %s' % content)
         return [x.rstrip() for x in content]
-    ### end _repohome_files internal api
+
+    # End _repohome_files internal api
 
     def _get_fp_triple(self, fp):
         # Given an fp, return a triple wt/index/head
@@ -166,7 +167,7 @@ class Oxit():
         head = self._get_pname_by_rev(fp)
         head = None if not os.path.isfile(head) else head
         return wt, ind, head
-        
+
     def checkout(self, filepath):
         """Checkout files to working dir (wd).
 
@@ -197,8 +198,10 @@ class Oxit():
                     os.system('cp %s %s' % (p_head, p_wt))
             else:
                     self._debug('debug checkout2 no wt: cp head wt')
-                    make_sure_path_exists(os.path.dirname(self._get_pname_wt_path(p)))
-                    os.system('cp %s %s' % (p_head, self._get_pname_wt_path(p)))
+                    make_sure_path_exists(
+                        os.path.dirname(self._get_pname_wt_path(p)))
+                    os.system('cp %s %s' % (p_head,
+                                            self._get_pname_wt_path(p)))
 
     def _get_conf(self, key):
         path = os.path.expanduser(self.conf)
@@ -207,24 +210,24 @@ class Oxit():
         cf = ConfigParser.RawConfigParser()
         cf.read(path)
         return cf.get('misc', key)
-    
+
     def clone(self, dry_run, src_url, nrevs):
         # Given a dropbox url for one file (limitation at least for now),
         # fetch the nrevs of the file and store locally in repo home and
         # checkout HEAD to working dir.
         self._debug('debug clone: %s' % (src_url))
 
-        token =  self._get_conf('auth_token')
+        token = self._get_conf('auth_token')
         if not token:
-            sys.exit("ERROR: auth_token not in ur oxit conf file")            
+            sys.exit("ERROR: auth_token not in ur oxit conf file")
         self.dbx = dropbox.Dropbox(token)
         try:
             self.dbx.users_get_current_account()
             self._debug('debug clone auth ok')
         except dropbox.exceptions.HttpError as err:
             sys.exit('Call to Dropbox failed: http error')
-        #except requests.exceptions.ConnectionError:
-            #sys.exit('Call to Dropbox failed: https connection')
+        # except requests.exceptions.ConnectionError:
+            # sys.exit('Call to Dropbox failed: https connection')
         except AuthError as err:
             sys.exit("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
         except dropbox.exceptions.ApiError as err:
@@ -240,13 +243,13 @@ class Oxit():
         self.init()
 
         # src_url should-not-must be a dropbox url for chrimony sakes
-        file = src_url.lower() #XXX dbx case insensitive
+        file = src_url.lower()  # XXX dbx case insensitive
         if file.startswith('dropbox://'):
             file = file[len('dropbox:/'):]  # keep single leading slash
         if not file.startswith('/') or file.endswith('/'):
             sys.exit('error: URL must have leading slash and no trailing slash')
         self._debug('debug clone: file=%s' % (file))
-        
+
         # Get all revs' metadata
         md_l = self._get_revs(file, nrevs)
         repo_home = self._get_pname_home_base() + file
@@ -260,7 +263,9 @@ class Oxit():
         self._repohome_files_put(file.strip('/'))
 
         # Finally! download the revs data and checkout themz to wt
-        self._debug('debug clone: download %d revs of %s to %s' % (nrevs, file, self.repo))
+        self._debug('debug clone: download %d revs of %s to %s' % (nrevs,
+                                                                   file,
+                                                                   self.repo))
         self._download_data(md_l, file, self.repo, nrevs)
         self.checkout(file)
         print('... cloned into %s.' % self.repo)
@@ -275,7 +280,7 @@ class Oxit():
         self._debug('debug _add_one_path cp %s %s' % (wt, index_path))
         make_sure_path_exists(index_path)
         os.system('cp %s %s' % (wt, index_path))
-    
+
     def add(self, filepath):
         # cp file from working tree to index tree
         self._debug('debug: start add: %s' % filepath)
@@ -284,11 +289,12 @@ class Oxit():
             self._add_one_path(p)
 
     def _reset_one_path(self, path):
-        ind_path = self._get_pname_index() + '/' + path        
+        ind_path = self._get_pname_index() + '/' + path
         if not os.path.isfile(ind_path):
-            sys.exit('error: path does not exist in index (staging area): %s' % path)
+            sys.exit('error: path does not exist in index (staging area): %s'
+                     % path)
         os.unlink(ind_path)
-        
+
     def reset(self, filepath):
         self._debug('debug: start reset: %s' % filepath)
         if filepath:
@@ -302,7 +308,7 @@ class Oxit():
         wt_dir = self._get_pname_repo_base()
         self._debug('debug: _get_wt_paths: %s' % wt_dir)
         return get_relpaths_recurse(wt_dir)
-    
+
     def status(self, filepath):
         # status take2 - more git like #amirite
         if filepath:
@@ -330,7 +336,7 @@ class Oxit():
                 if mods == 1:
                     print('Changes to be pushed:')
                 print('\tmodified: %s' % p)
-                 
+
         # changes not staged
         ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), fp_l)
         mods = 0
@@ -358,9 +364,9 @@ class Oxit():
 
     # xxx still needed??
     def _get_paths(self, path):
-        #todo: recurse wt --> list
+        # todo: recurse wt --> list
         return [path]
-    
+
     def _get_diff_pair(self, reva, revb, path):
         def wd_or_index(rev, p):
             if rev == 'wd':
@@ -368,13 +374,13 @@ class Oxit():
             if rev == 'index':
                 return self._get_pname_index_path(p)
             return None
-            
+
         ap = wd_or_index(reva, path)
         bp = wd_or_index(revb, path)
         ap = ap if ap else self._get_pname_by_rev(path, reva)
         bp = bp if bp else self._get_pname_by_rev(path, revb)
         return ap, bp
-        
+
     def _diff_one_path(self, diff_cmd, reva, revb,  path):
         (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), path)
         diff_cmd = diff_cmd if diff_cmd else DEFAULT_DIFF_CMD
@@ -407,7 +413,7 @@ class Oxit():
         qs = lambda(s): '\"' + s + '\"'
         (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), filepath)
         if merge_cmd:
-            shcmd = merge_cmd % (qs(fa), qs(fb)) # quotes cant hurt, eh?
+            shcmd = merge_cmd % (qs(fa), qs(fb))  # quotes cant hurt, eh?
         elif emacsclient_path:
             m_cmd = emacsclient_path + '/' + DEFAULT_MERGE_CMD
             shcmd = m_cmd % (qs(fa), qs(fb))
@@ -441,7 +447,7 @@ class Oxit():
         log_path = self._get_pname_logpath(path)
         self._debug('debug _get_log `%s`' % log_path)
         try:
-            with open(log_path) as f:  
+            with open(log_path) as f:
                 content = f.readlines()
         except IOError as err:
             sys.exit('error: log file not found - clone complete ok?')
@@ -453,7 +459,7 @@ class Oxit():
         logs = self._get_log(path)
         for l in logs:
             (rev, date, size) = l.split(OXITSEP1)
-            print '%s\t%s\t%s' % (rev, date, size), #trailn comma ftw!
+            print '%s\t%s\t%s' % (rev, date, size),  # trailn comma ftw!
 
     def log(self, filepath):
         self._debug('debug: start log: %s' % filepath)
@@ -474,24 +480,23 @@ class Oxit():
 
         # Skip if no change from current rev
         logs = self._get_log(path)
-        head = logs[0] # currrent rev
+        head = logs[0]
         (rev, date, size) = head.split(OXITSEP1)
-        head_path = self._get_pname_by_rev(path, rev)# 'rev='head?
+        head_path = self._get_pname_by_rev(path, rev)
         if filecmp.cmp(index_path, head_path):
             print('%s: no change ... skipping ...' % path)
             return
 
         with open(local_path, 'rb') as f:
-            # We use WriteMode=overwrite to make sure that the settings in the file
-            # are changed on upload
-            print("Uploading " + local_path + " to Dropbox as " + rem_path + " ...")
+            print("Uploading " + local_path + " to Dropbox as " +
+                  rem_path + " ...")
             try:
                 self.dbx.files_upload(f, rem_path, mode=WriteMode('overwrite'))
             except ApiError as err:
                 # This checks for the specific error where a user doesn't have
                 # enough Dropbox space quota to upload this file
                 if (err.error.is_path() and
-                    err.error.get_path().error.is_insufficient_space()):
+                        err.error.get_path().error.is_insufficient_space()):
                     sys.exit("ERROR: Cannot back up; insufficient space.")
                 elif err.user_message_text:
                     print(err.user_message_text)
@@ -500,7 +505,7 @@ class Oxit():
                     print(err)
                     sys.exit(101)
         os.remove(index_path)
-        
+
     def _get_index_paths(self):
         index_dir = self._get_pname_index()
         return get_relpaths_recurse(index_dir)
@@ -512,7 +517,7 @@ class Oxit():
         if post_push_clone:
                     self._debug('debug post_push_clone true')
 
-        token =  self._get_conf('auth_token')
+        token = self._get_conf('auth_token')
         if not token:
             sys.exit("ERROR: auth_token not in ur oxit conf file brah")
         self.dbx = dropbox.Dropbox(token)
@@ -523,7 +528,7 @@ class Oxit():
             sys.exit("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
         except Exception as e:
             sys.exit("ERROR: push call to Dropbox fail: %s" % e)
-            
+
         if filepath:
             if filepath not in [s.strip('./') for s in fp_l]:
                 sys.exit('push %s not in index' % filepath)
@@ -531,7 +536,7 @@ class Oxit():
                 print('push dryrun filepath: %s' % filepath)
                 print('push dryrun from local repo: %s' % self.repo)
                 print('push dryrun to remote repo: %s' %
-                      self._get_mmval('remote_origin') )
+                      self._get_mmval('remote_origin'))
             else:
                 self._push_one_path(filepath)
         else:
@@ -543,7 +548,7 @@ class Oxit():
                     print('push dryrun filepath: %s' % filepath)
                     print('push dryrun from local repo: %s' % self.repo)
                     print('push dryrun to remote repo: %s' %
-                      self._get_mmval('remote_origin') )
+                          self._get_mmval('remote_origin'))
                 else:
                     self._push_one_path(p)
 
@@ -551,10 +556,11 @@ class Oxit():
             return
 
         dropbox_url = self._get_mmval('remote_origin')
-        if dropbox_url  and post_push_clone: #need to read url from metameta dummy
+        if dropbox_url and post_push_clone:
             home = self._get_pname_home_base()
             destold = home + '.old.' + '%s' % random.randint(1, 99)
-            print('Mving/saving current repo home %s to %s ...' % (home, destold))
+            print('Mving/saving current repo home %s to %s ...'
+                  % (home, destold))
             os.system('mv %s %s' % (home, destold))
             print('Re-cloning to get current meta data/data from Dropbox...')
             self.clone(dry_run, dropbox_url, 10)
@@ -569,7 +575,7 @@ class Oxit():
             return mm.get('misc', key)
         else:
             return mm.items('misc')
-        
+
     def getmm(self, key):
         if key:
             print('%s=%s' % (key, self._get_mmval(key)))
