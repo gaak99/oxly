@@ -15,6 +15,7 @@ from dropbox.files import WriteMode
 from dropbox.exceptions import ApiError, AuthError
 from .utils import make_sure_path_exists, get_relpaths_recurse
 
+USER_AGENT = 'oxit/' + __version__
 OXITDIRVERSION = "1"
 OXITSEP1 = '::'
 OXITSEP2 = ':::'
@@ -220,7 +221,7 @@ class Oxit():
         token = self._get_conf('auth_token')
         if not token:
             sys.exit("ERROR: auth_token not in ur oxit conf file")
-        self.dbx = dropbox.Dropbox(token)
+        self.dbx = dropbox.Dropbox(token, user_agent=USER_AGENT)
         try:
             self.dbx.users_get_current_account()
             self._debug('debug clone auth ok')
@@ -520,7 +521,7 @@ class Oxit():
         token = self._get_conf('auth_token')
         if not token:
             sys.exit("ERROR: auth_token not in ur oxit conf file brah")
-        self.dbx = dropbox.Dropbox(token)
+        self.dbx = dropbox.Dropbox(token, user_agent=USER_AGENT)
         try:
             self.dbx.users_get_current_account()
             self._debug('debug push auth ok')
