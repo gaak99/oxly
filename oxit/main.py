@@ -1,4 +1,26 @@
 
+#!/usr/bin/env python
+
+# Copyright (c) 2016 Glenn Barry (gaak99@gmail.com)
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 
 from . import __version__
 
@@ -33,7 +55,15 @@ DEFAULT_DIFF_CMD = 'diff %s %s'
 
 
 class Oxit():
+    """Oxit class -- use the Dropbox API to observ/merge
+          diffs of any two Dropbox file revision
+    """
     def __init__(self, oxit_conf, oxit_repo, debug):
+        """Initialize Oxit class.
+
+        oxit_conf:  user's conf file path
+        oxit_repo:  local copy of Dropbox file revisions amd md
+        """
         self.debug = debug
         self.repo = oxit_repo
         self.home = OXITHOME
@@ -170,11 +200,9 @@ class Oxit():
         return wt, ind, head
 
     def checkout(self, filepath):
-        """Checkout files to working dir (wd).
+        """Checkout/copy file from .oxit/ to working dir (wd).
 
-        Also revert local wd changes w/staged version if it exists.
-        Keyword aruments:
-        filepath -- relative path of file to checkout
+        if staged version exists revert wd one to it instead.
         """
         if filepath:
             if not os.path.isfile(self._get_pname_by_rev(filepath)):
@@ -213,9 +241,11 @@ class Oxit():
         return cf.get('misc', key)
 
     def clone(self, dry_run, src_url, nrevs):
-        # Given a dropbox url for one file (limitation at least for now),
-        # fetch the nrevs of the file and store locally in repo home and
-        # checkout HEAD to working dir.
+        """Given a dropbox url for one file*, fetch the
+        n revisions of the file and store locally in repo's
+         .oxit and checkout HEAD to wd.
+        *current limit -- might be expanded
+        """
         self._debug('debug clone: %s' % (src_url))
 
         token = self._get_conf('auth_token')
@@ -283,7 +313,7 @@ class Oxit():
         os.system('cp %s %s' % (wt, index_path))
 
     def add(self, filepath):
-        # cp file from working tree to index tree
+        """Copy file from wd to index (aka staging area)"""
         self._debug('debug: start add: %s' % filepath)
         fp_l = self._get_paths(filepath)
         for p in fp_l:
@@ -292,11 +322,12 @@ class Oxit():
     def _reset_one_path(self, path):
         ind_path = self._get_pname_index() + '/' + path
         if not os.path.isfile(ind_path):
-            sys.exit('error: path does not exist in index (staging area): %s'
+            sys.exit('error: file does not exist in index (staging area): %s'
                      % path)
         os.unlink(ind_path)
 
     def reset(self, filepath):
+        """Remove file from index (staging area)"""
         self._debug('debug: start reset: %s' % filepath)
         if filepath:
             self._reset_one_path(filepath)
@@ -311,7 +342,7 @@ class Oxit():
         return get_relpaths_recurse(wt_dir)
 
     def status(self, filepath):
-        # status take2 - more git like #amirite
+        """List modified file(s) in staging area or wd"""
         if filepath:
             if not os.path.isfile(self._get_pname_wt_path(filepath)):
                 sys.exit('error: file name not found in repo wt -- spelled correctly?')
@@ -391,7 +422,10 @@ class Oxit():
         os.system(shcmd)
 
     def diff(self, diff_cmd, reva, revb, filepath):
-        # diff take 2 - less clunky ui and lesss buggy to boot $diety willing
+        """Run diff_cmd to display diffs from two revisions of file.
+
+        diff_cmd format: program %s %s
+        """
         self._debug('debug2: start diff: %s %s %s' % (reva, revb, filepath))
         if reva == revb:
             sys.exit('error: reva and revb the same yo diggity just no')
@@ -411,6 +445,10 @@ class Oxit():
             self._diff_one_path(diff_cmd, reva, revb, p)
 
     def merge(self, emacsclient_path, merge_cmd, reva, revb, filepath):
+        """Run merge_cmd to allow user to merge two revs.
+
+        merge_cmd format:  program %s %s
+        """
         qs = lambda(s): '\"' + s + '\"'
         (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), filepath)
         if merge_cmd:
@@ -424,6 +462,7 @@ class Oxit():
         os.system(shcmd)
 
     def init(self):
+        """Initialize local repo .oxit dir"""
         base_path = self._get_pname_home_base()
         if os.path.isdir(base_path):
             print('error: %s dir exists. Pls mv or rm.' % base_path)
@@ -463,6 +502,7 @@ class Oxit():
             print '%s\t%s\t%s' % (rev, date, size),  # trailn comma ftw!
 
     def log(self, filepath):
+        """List all local revisions (subset of) meta data""" 
         self._debug('debug: start log: %s' % filepath)
         fp_l = self._get_paths(filepath)
         l = len(fp_l)
@@ -512,7 +552,11 @@ class Oxit():
         return get_relpaths_recurse(index_dir)
 
     def push(self, dry_run, post_push_clone, filepath):
-        # Push filepath or all staged filepaths upstream
+        """Push/upload staged file upstream to Dropbox.
+
+        post_push_clone -- bool -- normally after push completes
+           a clone is done to resync with Dropbox
+        """
         fp_l = self._get_index_paths()
         self._debug('debug push: %s' % fp_l)
         if post_push_clone:
@@ -578,6 +622,7 @@ class Oxit():
             return mm.items('misc')
 
     def getmm(self, key):
+        """Fetch internal oxit sys file vars -- mostly for debug"""
         if key:
             print('%s=%s' % (key, self._get_mmval(key)))
         else:
