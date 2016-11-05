@@ -11,6 +11,7 @@ tramp
 #python
 *.pyc
 *.egg-info
+build/
 
 # Org-mode
 .org-id-locations

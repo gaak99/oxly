@@ -6,16 +6,19 @@ from . import __version__
 
 @click.group()
 @click.version_option(version=__version__)
-@click.option('--oxit-conf', envvar='OXIT_CONF', default='~/.oxitconfig')
+@click.option('--oxit-conf',
+              envvar='OXIT_CONF',
+              default='~/.oxitconfig',
+              help='User config file, default is ~/.oxitconfig.')
 @click.option('--oxit-repo', envvar='OXIT_REPO', default='.',
-              help='Dir to store working tree and .oxit.')
+              help='Dir to store working dir and .oxit.')
 @click.option('--debug/--no-debug', default=False,
                         envvar='OXIT_DEBUG')
 @click.pass_context
 def cli(ctx, oxit_conf, oxit_repo, debug):
     ctx.obj = Oxit(oxit_conf, oxit_repo, debug)
 
-@cli.command()
+@cli.command(help='Add the file to the index (staging area) to prep for push.')
 @click.argument('filepath')
 @click.pass_obj
 def add(oxit, filepath):
@@ -27,47 +30,47 @@ def add(oxit, filepath):
 def reset(oxit, filepath):
     oxit.reset(filepath)
 
-@cli.command()
+@cli.command(help='Download ')
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--nrevs',
-              help='number of latest revs to download',
-              required=False, default=10)
+              help='Number of latest file revisions (defaults to 5) to download from Dropbox.',
+              required=False, default=5)
 @click.argument('src')
 @click.pass_obj
 def clone(oxit, dry_run, src, nrevs):
     oxit.clone(dry_run, src, nrevs)
 
-@cli.command()
+@cli.command(help='Display the data differences of two revisions.')
 @click.option('--diff-cmd', required=False,
               envvar='DIFF_CMD',
-              help='diff sh cmd, format: prog %s %s')
+              help='Diff sh cmd, default is diff(1), format: program %s %s')
 @click.option('--reva', required=False, default='HEADMINUS1',
-              help='Defaults to HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are wd (working dir) and index (staging area).')
+              help='Default is HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are wd (working dir) and index (staging area).')
 @click.option('--revb', required=False, default='HEAD',
-              help='Defaults to HEAD (latest rev in Dropbox) ... ditto --reva.')
+              help='Default is HEAD (latest rev in Dropbox) ... ditto --reva.')
 @click.argument('filepath', required=True, default=None)
 @click.pass_obj
 def diff(oxit, diff_cmd, reva, revb, filepath):
     oxit.diff(diff_cmd, reva, revb, filepath)
     
-@cli.command()
+@cli.command(help='Prep local repo dir (used mostlu by clone).')
 @click.pass_obj
 def init(oxit):
     oxit.init()
 
-@cli.command()
+@cli.command(help='Display meta data (rev string, date modded, file size) of revisions downloaded from Dropbox.')
 @click.argument('filepath', required=True, default=None)
 @click.pass_obj
 def log(oxit, filepath):
     oxit.log(filepath)
 
-@cli.command()
+@cli.command(help='Run merge_cmd to allow user to merge two revs.')
 @click.option('--emacsclient-path', required=False,
               envvar='EMACSCLIENT_PATH',
               help='If necessary set full path of default emacsclient.')
 @click.option('--merge-cmd', required=False,
               envvar='MERGE_CMD',
-              help='format: prog %s %s')
+              help='Program to merge two revs, default is ediff via emacsclient, format: prog %s %s')
 @click.option('--reva', required=False, default='HEADMINUS1',
               help='Defaults to HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are wd (working dir) and index (staging area).')
 @click.option('--revb', required=False, default='HEAD',
@@ -77,7 +80,7 @@ def log(oxit, filepath):
 def merge(oxit, emacsclient_path, merge_cmd, reva, revb, filepath):
     oxit.merge(emacsclient_path, merge_cmd, reva, revb, filepath)
 
-@cli.command()
+@cli.command(help='Upload locally merged file to Dropbox.')
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--post-push-clone/--no-post-push-clone',
               help='After success on push, (no) resync w/Dropbox.)',
@@ -87,13 +90,13 @@ def merge(oxit, emacsclient_path, merge_cmd, reva, revb, filepath):
 def push(oxit, dry_run, post_push_clone, filepath):
     oxit.push(dry_run, post_push_clone, filepath)
     
-@cli.command()
+@cli.command(help='Copy file from .oxit/ to working dir (wd). If staged version exists revert wd one to it instead.')
 @click.argument('filepath', required=False, default=None)
 @click.pass_obj
 def checkout(oxit, filepath):
     oxit.checkout(filepath)
 
-@cli.command()
+@cli.command(help='Display if file modded in staging area and/or working dir (wd).')
 @click.argument('filepath', required=False, default=None)
 @click.pass_obj
 def status(oxit, filepath):
