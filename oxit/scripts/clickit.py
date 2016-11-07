@@ -9,16 +9,16 @@ from . import __version__
 @click.option('--oxit-conf',
               envvar='OXIT_CONF',
               default='~/.oxitconfig',
-              help='User config file, default is ~/.oxitconfig.')
+              help='User config file, default is ~/.oxitconfig.\nVar list (INI format):\n[misc]\nauth_token=$mytoken')
 @click.option('--oxit-repo', envvar='OXIT_REPO', default='.',
-              help='Dir to store working dir and .oxit.')
+              help='Local dir to store working dir (wd) and .oxit.')
 @click.option('--debug/--no-debug', default=False,
                         envvar='OXIT_DEBUG')
 @click.pass_context
 def cli(ctx, oxit_conf, oxit_repo, debug):
     ctx.obj = Oxit(oxit_conf, oxit_repo, debug)
 
-@cli.command(help='Add the file to the index (staging area) to prep for push.')
+@cli.command(help='Add/copy the modded file from wd to the index (staging area) to prep for push.')
 @click.argument('filepath')
 @click.pass_obj
 def add(oxit, filepath):
