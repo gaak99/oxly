@@ -58,11 +58,13 @@ def diff(oxit, diff_cmd, reva, revb, filepath):
 def init(oxit):
     oxit.init()
 
-@cli.command(help='Display meta data of revisions downloaded from Dropbox, format: rev-string date-modded file-size')
+@cli.command(help='Display meta data of revisions downloaded from Dropbox, oneline format: rev-string file-size (bytes) date-modded')
+@click.option('--oneline/--no-oneline', required=False, default=False,
+              help='One line per revision.')
 @click.argument('filepath', required=True, default=None)
 @click.pass_obj
-def log(oxit, filepath):
-    oxit.log(filepath)
+def log(oxit, oneline, filepath):
+    oxit.log(oneline, filepath)
 
 @cli.command(help='Run merge-cmd to allow user to merge two revs.')
 @click.option('--emacsclient-path', required=False,

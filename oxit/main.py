@@ -62,11 +62,10 @@ class Oxit():
         """Initialize Oxit class.
 
         oxit_conf:  user's conf file path
-        oxit_repo:  local copy of Dropbox file revisions amd md
+        oxit_repo:  local copy of Dropbox file revisions data and md
         """
         self.debug = debug
         self.repo = os.getcwd() if oxit_repo == '.' else oxit_repo 
-        print('repo = %s' % self.repo)
         self.home = OXITHOME
         self.conf = oxit_conf
         self.dbx = None
@@ -494,15 +493,22 @@ class Oxit():
             sys.exit('error: log file not found -- check file name spelling or if clone completed ok')
         return content
 
-    def _log_one_path(self, path):
+    def _log_one_path(self, oneline, path):
         # on disk '$fileOXITSEP2log':
         #   $rev||$date||$size
         logs = self._get_log(path)
-        for l in logs:
-            (rev, date, size) = l.split(OXITSEP1)
-            print '%s\t%s\t%s' % (rev, date, size),  # trailn comma ftw!
-
-    def log(self, filepath):
+        if oneline:
+            for l in logs:
+                (rev, date, size) = l.split(OXITSEP1)
+                print '%s\t%s\t%s' % (rev, size.rstrip(), date)
+        else:
+            for l in logs:
+                (rev, date, size) = l.split(OXITSEP1)
+                print('Revision:  %s' % rev)
+                print('Size (bytes):  %s' % size.rstrip())
+                print('Server modified:  %s\n' % date)
+                
+    def log(self, oneline, filepath):
         """List all local revisions (subset of) meta data""" 
         self._debug('debug: start log: %s' % filepath)
         fp_l = self._get_paths(filepath)
@@ -510,7 +516,7 @@ class Oxit():
         for p in fp_l:
             if l > 1:
                 print('%s:' % p)
-            self._log_one_path(p)
+            self._log_one_path(oneline, p)
             if l > 1:
                 print()
 
