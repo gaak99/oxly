@@ -65,7 +65,7 @@ class Oxit():
         oxit_repo:  local copy of Dropbox file revisions amd md
         """
         self.debug = debug
-        self.repo = oxit_repo
+        self.repo = oxit_repo if oxit_repo else os.getcwd()
         self.home = OXITHOME
         self.conf = oxit_conf
         self.dbx = None
@@ -100,7 +100,7 @@ class Oxit():
         logf.close()
 
     def _get_revs(self, path, nrevs=10):
-        print("Finding available revisions on Dropbox...")
+        print("Finding %d latest revisions on Dropbox..." % nrevs)
         try:
             revisions = sorted(self.dbx.files_list_revisions(path,
                                                              limit=nrevs).entries,
@@ -490,7 +490,7 @@ class Oxit():
             with open(log_path) as f:
                 content = f.readlines()
         except IOError as err:
-            sys.exit('error: log file not found - clone complete ok?')
+            sys.exit('error: log file not found -- check file name spelling or if clone completed ok')
         return content
 
     def _log_one_path(self, path):
@@ -602,14 +602,17 @@ class Oxit():
 
         dropbox_url = self._get_mmval('remote_origin')
         if dropbox_url and post_push_clone:
-            home = self._get_pname_home_base()
-            destold = home + '.old.' + '%s' % random.randint(1, 99)
-            print('Mving/saving current repo home %s to %s ...'
-                  % (home, destold))
-            os.system('mv %s %s' % (home, destold))
+            self._save_repo(self.repo)
             print('Re-cloning to get current meta data/data from Dropbox...')
             self.clone(dry_run, dropbox_url, 10)
 
+    def _save_repo(self, dir):
+            home = self._get_pname_home_base()
+            destold = home + '.old.' + '%s' % random.randint(1, 99)
+            print('Moving/saving current repo home %s to %s ...'
+                  % (home, destold))
+            os.system('mv %s %s' % (home, destold))
+        
     def _get_mmval(self, key):
         mm_path = self._get_pname_mmpath()
         if not os.path.isfile(mm_path):
