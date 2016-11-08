@@ -65,7 +65,8 @@ class Oxit():
         oxit_repo:  local copy of Dropbox file revisions amd md
         """
         self.debug = debug
-        self.repo = oxit_repo if oxit_repo else os.getcwd()
+        self.repo = os.getcwd() if oxit_repo == '.' else oxit_repo 
+        print('repo = %s' % self.repo)
         self.home = OXITHOME
         self.conf = oxit_conf
         self.dbx = None
