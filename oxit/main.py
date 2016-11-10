@@ -611,7 +611,7 @@ class Oxit():
         if dropbox_url and post_push_clone:
             self._save_repo(self.repo)
             print('Re-cloning to get current meta data/data from Dropbox...')
-            self.clone(dry_run, dropbox_url, 10)
+            self.clone(dry_run, dropbox_url, 5)
 
     def _save_repo(self, dir):
             home = self._get_pname_home_base()
