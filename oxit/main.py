@@ -290,6 +290,7 @@ class Oxit():
         # Save meta meta & update master file path list
         mmf = open(self._get_pname_mmpath(), "a")
         mmf.write('remote_origin=%s\n' % src_url)
+        mmf.write('nrevs=%d\n' % nrevs)
         mmf.close()
         self._repohome_files_put(file.strip('/'))
 
@@ -611,7 +612,7 @@ class Oxit():
         if dropbox_url and post_push_clone:
             self._save_repo(self.repo)
             print('Re-cloning to get current meta data/data from Dropbox...')
-            self.clone(dry_run, dropbox_url, 5)
+            self.clone(dry_run, dropbox_url, self._get_mmval('nrevs'))
 
     def _save_repo(self, dir):
             home = self._get_pname_home_base()
