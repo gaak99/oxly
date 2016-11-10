@@ -14,7 +14,7 @@ The merge cmd is user setable and defaults to the emacs/client ediff cmd.
 emacs ediff org-mode orgzly dropbox cloud sync
 
 #Backstory
-Very nicely, *every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
+*Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
 And Dropbox will save them for 1 month (free) or 1 year (paid).
 And as a long time casual Dropbox user this was news to me recently.
 
@@ -28,7 +28,7 @@ And if you squint hard enough Dropbox's auto-versioning looks like lightweight c
 
 ```bash
 git clone https://github.com/gaak99/oxit.git
-python setup.py install 
+sudo python setup.py install 
 ```
 * Dropbox auth token
 
