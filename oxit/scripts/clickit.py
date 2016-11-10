@@ -67,6 +67,7 @@ def log(oxit, oneline, filepath):
     oxit.log(oneline, filepath)
 
 @cli.command(help='Run merge-cmd to allow user to merge two revs.')
+@click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--emacsclient-path', required=False,
               envvar='EMACSCLIENT_PATH',
               help='If necessary set full path of default emacsclient.')
@@ -79,8 +80,8 @@ def log(oxit, oneline, filepath):
               help='Defaults to HEAD (latest rev in Dropbox) ... ditto --reva.')
 @click.argument('filepath')
 @click.pass_obj
-def merge(oxit, emacsclient_path, merge_cmd, reva, revb, filepath):
-    oxit.merge(emacsclient_path, merge_cmd, reva, revb, filepath)
+def merge(oxit, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+    oxit.merge(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
 
 @cli.command(help='Upload result of locally merged files to Dropbox.')
 @click.option('--dry-run/--no-dry-run', default=False)

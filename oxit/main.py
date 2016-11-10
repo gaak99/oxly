@@ -445,7 +445,7 @@ class Oxit():
             self._debug('debug diff2 p=%s' % p)
             self._diff_one_path(diff_cmd, reva, revb, p)
 
-    def merge(self, emacsclient_path, merge_cmd, reva, revb, filepath):
+    def merge(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
         """Run merge_cmd to allow user to merge two revs.
 
         merge_cmd format:  program %s %s
@@ -460,6 +460,9 @@ class Oxit():
         else:
             shcmd = DEFAULT_MERGE_CMD % (qs(fa), qs(fb))
         self._debug('debug merge: %s ' % shcmd)
+        if dry_run:
+            print('merge dry-run: %s' % shcmd)
+            return
         os.system(shcmd)
 
     def init(self):
