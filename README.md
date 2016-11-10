@@ -32,7 +32,7 @@ python setup.py install
 ```
 * Dropbox auth token
 
-Generate an auth token (????? w/full access to files and types) from Dropbox app console
+Generate your auth (w/full access to files and types) from Dropbox app console
    `<https://www.dropbox.com/developers/apps>`
    
 And add it to ~/.oxitconfig. Note no quotes needed around $token.
@@ -42,41 +42,41 @@ And add it to ~/.oxitconfig. Note no quotes needed around $token.
 auth_token=$token
 ```
 
-##As needed (Dailyish)
+##As needed (dailyish)
 
 1. Save same file shared via Dropbox on laptop (~/Dropbox) and Orgzly (locally).
-Select `Sync` notes on Orgzly.
-If sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force save` (long press on note) on Orgzly.
+   Select `Sync` notes on Orgzly.
+   If sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force save` (long press on note) on Orgzly.
 
-The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
+   The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
 
 2. Run oxit cmds on laptop
 
-```bash
-$ mkdir /tmp/myoxitrepo && cd /tmp/myoxitrepo 
+	```bash
+	$ mkdir /tmp/myoxitrepo && cd /tmp/myoxitrepo 
 
-$ oxit clone dropbox://orgzly/foo.txt
+	$ oxit clone dropbox://orgzly/foo.txt
 
-$ (optional) oxit log orgzly/foo.txt
+	$ (optional) oxit log orgzly/foo.txt
 
-$ (optional) oxit diff orgzly/foo.txt
+	$ (optional) oxit diff orgzly/foo.txt
 
-$ (optional) oxit merge --dry-run orgzly/foo.txt
+	$ (optional) oxit merge --dry-run orgzly/foo.txt
 
-$ oxit merge --no-dry-run orgzly/foo.txt #merge last two revisions
+	$ oxit merge --no-dry-run orgzly/foo.txt # merge last two revisions by hand
 
-(note merged buffer should be saved in repo working dir -- $repo/$filepath, *not* under $repo/.oxit/)
+	(note merged buffer should be saved in repo working dir -- $repo/$filepath, *not* under $repo/.oxit/)
 
-$ (optional) oxit status
+	$ (optional) oxit status
 
-$ oxit add orgzly/foo.txt
+	$ oxit add orgzly/foo.txt
 
-$ (optional) oxit status
+	$ (optional) oxit status
 
-$ (optional) oxit push --dry-run orgzly/foo.txt
+	$ (optional) oxit push --dry-run orgzly/foo.txt
 
-$ oxit push --no-dry-run orgzly/foo.txt
-```
+	$ oxit push --no-dry-run orgzly/foo.txt
+	```
 
 3. Finally on Orgzly select `Sync` to load merged/latest revision from Dropbox.
 
@@ -100,6 +100,9 @@ $ oxit sub-cmd --help
 (It's not automated cuz it's a two-way merge cuz aka not a real VCS and no ancestor can be identified (how about gnu patch fuzzy type merge?)).
 
 ##Using oxit
+###Tested/Used with w/only 2 Dropbox clients
+* My use case is laptop and Android Orgzly so it's been tested by myself much. More clients should be viable as long as two at a time are merged/pushed in a careful order.
+
 ###Running ediff
 * Use the ```merge --dry-run``` opt to see merge-cmd that will be run.
 By default it's emacsclient so the usual gotchas apply here -- on emacs run ```server-start```.
@@ -140,3 +143,14 @@ MIT.  See LICENSE file for full text.
 #Warranty
  
 None.
+
+# Refs
+<http://www.orgzly.com>
+
+<https://www.gnu.org/software/emacs/manual/html_node/ediff/>
+
+<http://blog.plasticscm.com/2010/11/live-to-merge-merge-to-live.html?m=1>
+
+#Props
+The hackers behind Dropbox, Orgzly, emacs/org-mode/ediff, Python/Click, git/github/git-remote-dropbox, and others I'm probably forgetting.
+  
