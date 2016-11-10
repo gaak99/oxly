@@ -1,39 +1,28 @@
 #Status
-
 Brand new as of late Oct 2016.
 
-Used daily by the author but that's total usage so far -- beta testers and comments welcome.
+Used dailyish by the author (w/2 Dropbox clients) but that's total usage so far -- beta testers aka early adopters and comments welcome (email gaak99 @ gmail.com).
 
 #Intro
-
 oxit uses the Dropbox API to observ/merge diffs of any two Dropbox file revisions with a git-style cli.
 
-So you can edit/save the same file on multiple clients (laptop, Android Orgzly) and then later run oxit (on laptop) to observe the diffs and merge/resolve-conflicts if necessary.
+So you can edit/save the same file on multiple clients (laptop, Android Orgzly) and then later run oxit (on laptop) to observe the diffs, merge last two revisions (and resolve-conflicts if necessary), and push merged file to Dropbox.
 
 The merge cmd is user setable and defaults to the emacs/client ediff cmd.
 
-And oxit has a git(1) style cli flow we all know and love/hate
+## Keywords
+emacs ediff org-mode orgzly dropbox cloud sync
 
 #Backstory
-
-*Every time* you edit/save or copy over an existing file a new revision is made.
+Very nicely, *every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
 And Dropbox will save them for 1 month (free) or 1 year (paid).
 And as a long time casual Dropbox user this was news to me recently.
 
-And  my fave org-mode mobile app Orgzly supports Dropbox but not git(1) yet so I needed a way to merge notes that are modified on both laptop and mobile.
+And my fave org-mode mobile app Orgzly supports Dropbox but not git(1) yet so I needed a way to merge notes that are modified on both laptop and mobile.
 
 And if you squint hard enough Dropbox's auto-versioning looks like lightweight commits and maybe we can simulate a (limited) DVCS here.
 
-#Caveats
-
-As far as a poor-man's DVCS goes, oxit is useful when git is not avail but lacks many of git's often used features...
-
-* oxit is not git
-
-* Only handles a single file on Dropbox as remote repo
-
 #Quick start
-
 ##One time
 * Install
 
@@ -43,54 +32,95 @@ python setup.py install
 ```
 * Dropbox auth token
 
-Generate an auth token from Dropbox app console
+Generate an auth token (????? w/full access to files and types) from Dropbox app console
    `<https://www.dropbox.com/developers/apps>`
    
-And add it to ~/.oxitconfig
+And add it to ~/.oxitconfig. Note no quotes needed around $token.
 
 ```
 [misc]
 auth_token=$token
 ```
 
-##Daily(ish)
+##As needed (Dailyish)
 
 1. Save same file shared via Dropbox on laptop (~/Dropbox) and Orgzly (locally).
 Select `Sync` notes on Orgzly.
-If sync fails cuz the Orgzly error msg says it's modified both local and remote, then `Force save` (long press on note) on Orgzly.
-*This* is the case we need oxit.
+If sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force save` (long press on note) on Orgzly.
 
-   The forced save is safe cuz the prev saved edits will be saved by Dropbox as seperate revisions.
+The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
 
 2. Run oxit cmds on laptop
 
 ```bash
-$ export OXIT_REPO=/tmp/myrepo
+$ mkdir /tmp/myoxitrepo && cd /tmp/myoxitrepo 
 
-$ oxit clone dropbox://foo.txt
+$ oxit clone dropbox://orgzly/foo.txt
 
-$ (optional) oxit log foo.txt
+$ (optional) oxit log orgzly/foo.txt
 
-$ (optional) oxit diff foo.txt
+$ (optional) oxit diff orgzly/foo.txt
 
-$ oxit merge --rev-diff-type head-headminus1 foo.txt #merge last two revisions
+$ (optional) oxit merge --dry-run orgzly/foo.txt
 
-(note merged buffer should be saved in repo working tree dir, not under .oxit/)
+$ oxit merge --no-dry-run orgzly/foo.txt #merge last two revisions
 
-$ oxit add foo.txt
+(note merged buffer should be saved in repo working dir -- $repo/$filepath, *not* under $repo/.oxit/)
 
 $ (optional) oxit status
 
-$ oxit push --no-dry-run foo.txt
+$ oxit add orgzly/foo.txt
+
+$ (optional) oxit status
+
+$ (optional) oxit push --dry-run orgzly/foo.txt
+
+$ oxit push --no-dry-run orgzly/foo.txt
 ```
 
-3. On Orgzly select `Sync` to load merged/latest revision from Dropbox.
+3. Finally on Orgzly select `Sync` to load merged/latest revision from Dropbox.
+
 
 #Usage
 ```bash
 $ oxit --help
 
 $ oxit sub-cmd --help
+```
+
+
+#Tips/Tricks/Caveats/Gotchas
+
+##Design
+* oxit is not git -- As far as a poor-man's DVCS goes, oxit is useful when git is not always avail but lacks many of git's popular features (some cuz no real commits, some by design (deemed not useful in this context), some by author's git ignorance or lack of time to implement them).
+
+* Only handles a single file on Dropbox as remote repo (might be expanded to a dir tree in future). 
+
+* The merge is done by hand which is not as nice as automated merge but at least you have full control over merged file and conflicts must be resolved by hand in any model (_citation needed_) anyways.
+(It's not automated cuz it's a two-way merge cuz aka not a real VCS and no ancestor can be identified (how about gnu patch fuzzy type merge?)).
+
+##Using oxit
+###Running ediff
+* Use the ```merge --dry-run``` opt to see merge-cmd that will be run.
+By default it's emacsclient so the usual gotchas apply here -- on emacs run ```server-start```.
+* If you are like me and have several versions of emacs installed and emacsclient can't connect, try setting  ```merge --emacsclient-path```.
+
+###Using ediff
+* ediff skillz def a plus here. But if not currently avail then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- Emacs app.
+* Typically in ediff you'll choose buffer A or buffer B for each change chunk, but for this type of merge (2 way) sometimes (appended chunks in A&B for example) you may want both and thus you may need to hand edit the merge buffer (better way?).
+* Orgzly seems to add blank line(s) so don't ediff merge them out on Emacs else u will keep seeing them come back -- zombielike --  to haunt you and must re-merge again and again.
+* BTW if you don't dig your ediff config try mines (that I found on the Net)
+
+```lisp
+;; don't start another frame
+;; this is done by default in preluse
+(setq ediff-window-setup-function 'ediff-setup-windows-plain)
+;; put windows side by side
+(setq ediff-split-window-function (quote split-window-horizontally))
+;; revert windows on exit - needs winner mode
+(winner-mode)
+(add-hook 'ediff-after-quit-hook-internal 'winner-undo)
+(add-hook 'ediff-prepare-buffer-hook #'show-all)
 ```
 
 #Test
