@@ -22,7 +22,7 @@ repo=$repo.$RANDOM
 full_local_path=$repo/$path
 oxit --oxit-repo $repo clone $url
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo log $path
+oxit --oxit-repo $repo log --oneline $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 oxit --oxit-repo $repo diff $path
 #oxit --oxit-repo $repo merge $path
