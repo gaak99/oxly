@@ -11,7 +11,7 @@ So you can edit/save the same file on multiple clients (laptop, Android Orgzly) 
 The merge cmd is user setable and defaults to the emacs/client ediff cmd.
 
 ## Keywords
-emacs ediff org-mode orgzly dropbox cloud sync
+oxit emacs ediff org-mode orgzly dropbox cloud sync
 
 #Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
@@ -20,7 +20,7 @@ And as a long time casual Dropbox user this was news to me recently.
 
 And my fave org-mode mobile app Orgzly supports Dropbox but not git(1) yet so I needed a way to merge notes that are modified on both laptop and mobile.
 
-And if you squint hard enough Dropbox's auto-versioning looks like lightweight commits and maybe we can simulate a (limited) DVCS here.
+And if you squint hard enough Dropbox's auto-versioning looks like lightweight commits and maybe we can simulate a (limited) DVCS here enough to be useful.
 
 #Quick start
 ##One time
@@ -101,11 +101,11 @@ $ oxit sub-cmd --help
 
 ##Using oxit
 ###Tested/Used with w/only 2 Dropbox clients
-* My use case is laptop and Android Orgzly so it's been tested by myself much. More clients should be viable as long as two at a time are merged/pushed in a careful order.
+* My use case is laptop and Android Orgzly so it's been tested by myself much. More clients should be viable as long as two at a time are merged/pushed in a careful manner.
 
-###Running ediff
+###Running merge-cmd
 * Use the ```merge --dry-run``` opt to see merge-cmd that will be run.
-By default it's emacsclient so the usual gotchas apply here -- on emacs run ```server-start```.
+By default it's ediff via emacsclient so the usual gotchas apply here -- in emacs run ```server-start```.
 * If you are like me and have several versions of emacs installed and emacsclient can't connect, try setting  ```merge --emacsclient-path```.
 
 ###Using ediff
@@ -154,3 +154,4 @@ None.
 #Props
 The hackers behind Dropbox, Orgzly, emacs/org-mode/ediff, Python/Click, git/github/git-remote-dropbox, and others I'm probably forgetting.
   
+ 
