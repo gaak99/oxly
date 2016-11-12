@@ -247,6 +247,8 @@ class Oxit():
         *current limit -- might be expanded
         """
         self._debug('debug clone: %s' % (src_url))
+        nrevs = int(nrevs)
+        self._debug('debug clone: nrevs=%d' % (nrevs))
 
         token = self._get_conf('auth_token')
         if not token:
@@ -548,12 +550,13 @@ class Oxit():
         if filecmp.cmp(index_path, head_path):
             print('%s: no change ... skipping ...' % path)
             return
-
+        self._debug('debug push one path: %s' % local_path)
         with open(local_path, 'rb') as f:
-            print("Uploading " + local_path + " to Dropbox as " +
+            print("Uploading staged " + path + " to Dropbox as " +
                   rem_path + " ...")
             try:
                 self.dbx.files_upload(f, rem_path, mode=WriteMode('overwrite'))
+                print('... upload complete.')
             except ApiError as err:
                 # This checks for the specific error where a user doesn't have
                 # enough Dropbox space quota to upload this file
@@ -623,9 +626,10 @@ class Oxit():
 
         dropbox_url = self._get_mmval('remote_origin')
         if dropbox_url and post_push_clone:
+            nrevs = self._get_mmval('nrevs')
             self._save_repo(self.repo)
             print('Re-cloning to get current meta data/data from Dropbox...')
-            self.clone(dry_run, dropbox_url, self._get_mmval('nrevs'))
+            self.clone(dry_run, dropbox_url, nrevs)
 
     def _save_repo(self, dir):
             home = self._get_pname_home_base()
