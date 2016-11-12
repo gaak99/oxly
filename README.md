@@ -57,23 +57,23 @@ auth_token=$token
 
 	$ oxit clone dropbox://orgzly/foo.txt
 
-	$ (optional) oxit log orgzly/foo.txt
+	(optional) $ oxit log orgzly/foo.txt
 
-	$ (optional) oxit diff orgzly/foo.txt
+	(optional) $ oxit diff orgzly/foo.txt
 
-	$ (optional) oxit merge --dry-run orgzly/foo.txt
+	(optional) $ oxit merge --dry-run orgzly/foo.txt
 
 	$ oxit merge --no-dry-run orgzly/foo.txt # merge last two revisions by hand
 
 	(note merged buffer should be saved in repo working dir -- $repo/$filepath, *not* under $repo/.oxit/)
 
-	$ (optional) oxit status
+	(optional) $ oxit status
 
 	$ oxit add orgzly/foo.txt
 
-	$ (optional) oxit status
+	(optional) $ oxit status
 
-	$ (optional) oxit push --dry-run orgzly/foo.txt
+	(optional) $ oxit push --dry-run orgzly/foo.txt
 
 	$ oxit push --no-dry-run orgzly/foo.txt
 	```
@@ -92,7 +92,7 @@ $ oxit sub-cmd --help
 #Tips/Tricks/Caveats/Gotchas
 
 ##Design
-* oxit is not git -- As far as a poor-man's DVCS goes, oxit is useful when git is not always avail but lacks many of git's popular features (some cuz no real commits, some by design (deemed not useful in this context), some by author's git ignorance or lack of time to implement them).
+* oxit is not git -- Def not git as no real commits, no branches, single user, etc. But as far as a poor-man's DVCS goes, oxit can be useful when git is not avail.
 
 * Only handles a single file on Dropbox as remote repo (might be expanded to a dir tree in future). 
 
@@ -106,11 +106,12 @@ $ oxit sub-cmd --help
 ###Running merge-cmd
 * Use the ```merge --dry-run``` opt to see merge-cmd that will be run.
 By default it's ediff via emacsclient so the usual gotchas apply here -- in emacs run ```server-start```.
-* If you are like me and have several versions of emacs installed and emacsclient can't connect, try setting  ```merge --emacsclient-path```.
+* If you are like me and have several versions of emacs installed and emacsclient can't connect, try setting  ```merge --emacsclient-path``` (or sh $EMACSCLIENT_PATH).
 
 ###Using ediff
 * ediff skillz def a plus here. But if not currently avail then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- Emacs app.
 * Typically in ediff you'll choose buffer A or buffer B for each change chunk, but for this type of merge (2 way) sometimes (appended chunks in A&B for example) you may want both and thus you may need to hand edit the merge buffer (better way?).
+* The merged buffer should be saved in repo working dir -- ```$repo/$filepath```, *not* under ```$repo/.oxit/```.
 * Orgzly seems to add blank line(s) so don't ediff merge them out on Emacs else u will keep seeing them come back -- zombielike --  to haunt you and must re-merge again and again.
 * BTW if you don't dig your ediff config try mines (that I found on the Net)
 
