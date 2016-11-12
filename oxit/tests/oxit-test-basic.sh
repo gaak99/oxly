@@ -19,6 +19,8 @@ debug=$4
 url=dropbox://$path
 repo=$repo.$RANDOM
 
+oxit --version
+
 full_local_path=$repo/$path
 oxit --oxit-repo $repo clone $url
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
