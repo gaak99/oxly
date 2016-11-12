@@ -342,6 +342,16 @@ class Oxit():
         self._debug('debug: _get_wt_paths: %s' % wt_dir)
         return get_relpaths_recurse(wt_dir)
 
+    def _scrub_fnames(self, fp_l):
+        ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), fp_l)
+        if not ifp_l:
+            return None
+        # emacs prev version
+        ifp_l = itertools.ifilterfalse(lambda x: x.endswith('~'), ifp_l)
+        if not ifp_l:
+            return None
+        return ifp_l
+    
     def status(self, filepath):
         """List modified file(s) in staging area or wd"""
         if filepath:
@@ -351,9 +361,9 @@ class Oxit():
         else:
             fp_l = self._get_wt_paths()
 
-        ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), fp_l)
+        ifp_l = self._scrub_fnames(fp_l)
         if not ifp_l:
-            print('warning: wt empty')
+            sys.exit('warning: internal err status: wt paths empty')
 
         self._debug('debug status2 %s' % ifp_l)
         # changes staged but not pushed
@@ -371,7 +381,7 @@ class Oxit():
                 print('\tmodified: %s' % p)
 
         # changes not staged
-        ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), fp_l)
+        ifp_l = self._scrub_fnames(fp_l)
         mods = 0
         for p in ifp_l:
             self._debug('debug status2 p=%s' % p)
@@ -438,9 +448,9 @@ class Oxit():
         else:
             fp_l = self._get_wt_paths()
 
-        ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), fp_l)
+        ifp_l = self._scrub_fnames(fp_l)
         if not ifp_l:
-            print('warning: wt empty')
+            sys.exit('warning: internal err diff: wt empty')
         for p in ifp_l:
             self._debug('debug diff2 p=%s' % p)
             self._diff_one_path(diff_cmd, reva, revb, p)
