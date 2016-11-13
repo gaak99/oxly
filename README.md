@@ -22,8 +22,16 @@ And my fave org-mode mobile app Orgzly supports Dropbox but not git(1) yet so I 
 
 And if you squint hard enough Dropbox's auto-versioning looks like lightweight commits and maybe we can simulate a (limited) DVCS here enough to be useful.
 
-#Quick start
-##One time
+
+#Usage
+```bash
+$ oxit --help
+
+$ oxit sub-cmd --help
+```
+
+##Quick start
+###One time
 * Install
 
 ```bash
@@ -42,9 +50,9 @@ And add it to ~/.oxitconfig. Note no quotes needed around $token.
 auth_token=$token
 ```
 
-##As needed (dailyish)
+###As needed (dailyish)
 
-1. Save same file shared via Dropbox on laptop (~/Dropbox) and Orgzly (locally).
+1. Save same file shared via Dropbox on laptop (~/Dropbox) and locally on Android/Orgzly.
    Select `Sync` notes on Orgzly.
    If sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force save` (long press on note) on Orgzly.
 
@@ -59,39 +67,31 @@ auth_token=$token
 
 	(optional) $ oxit log orgzly/foo.txt
 
-	(optional) $ oxit diff orgzly/foo.txt
+	(optional) $ oxit diff orgzly/foo.txt # diff(1) last two revisions
 
 	(optional) $ oxit merge --dry-run orgzly/foo.txt
 
-	$ oxit merge --no-dry-run orgzly/foo.txt # merge last two revisions by hand
+	$ oxit merge --no-dry-run orgzly/foo.txt # merge last two revisions (with emacs ediff)
 
 	(note merged buffer should be saved in repo working dir -- $repo/$filepath, *not* under $repo/.oxit/)
 
 	(optional) $ oxit status
 
-	$ oxit add orgzly/foo.txt
+	$ oxit add orgzly/foo.txt # add merged file to staging area
 
 	(optional) $ oxit status
 
 	(optional) $ oxit push --dry-run orgzly/foo.txt
 
-	$ oxit push --no-dry-run orgzly/foo.txt
+	$ oxit push --no-dry-run orgzly/foo.txt # upload merged file to Dropbox
 	```
 
 3. Finally on Orgzly select `Sync` to load merged/latest revision from Dropbox.
 
 
-#Usage
-```bash
-$ oxit --help
+###Tips/Tricks/Caveats/Gotchas
 
-$ oxit sub-cmd --help
-```
-
-
-#Tips/Tricks/Caveats/Gotchas
-
-##Design
+####Design
 * oxit is not git -- Def not git as no real commits, no branches, single user, etc. But as far as a poor-man's DVCS goes, oxit can be useful when git is not avail.
 
 * Only handles a single file on Dropbox as remote repo (might be expanded to a dir tree in future). 
@@ -99,16 +99,16 @@ $ oxit sub-cmd --help
 * The merge is done by hand which is not as nice as automated merge but at least you have full control over merged file and conflicts must be resolved by hand in any model (_citation needed_) anyways.
 (It's not automated cuz it's a two-way merge cuz aka not a real VCS and no ancestor can be identified (how about gnu patch fuzzy type merge?)).
 
-##Using oxit
-###Tested/Used with w/only 2 Dropbox clients
+####Using oxit
+#####Tested/Used with w/only 2 Dropbox clients
 * My use case is laptop and Android Orgzly so it's been tested by myself much. More clients should be viable as long as two at a time are merged/pushed in a careful manner.
 
-###Running merge-cmd
+#####Running merge-cmd
 * Use the ```merge --dry-run``` opt to see merge-cmd that will be run.
 By default it's ediff via emacsclient so the usual gotchas apply here -- in emacs run ```server-start```.
 * If you are like me and have several versions of emacs installed and emacsclient can't connect, try setting  ```merge --emacsclient-path``` (or sh $EMACSCLIENT_PATH).
 
-###Using ediff
+####Using ediff
 * ediff skillz def a plus here. But if not currently avail then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- Emacs app.
 * Typically in ediff you'll choose buffer A or buffer B for each change chunk, but for this type of merge (2 way) sometimes (appended chunks in A&B for example) you may want both and thus you may need to hand edit the merge buffer (better way?).
 * The merged buffer should be saved in repo working dir -- ```$repo/$filepath```, *not* under ```$repo/.oxit/```.
