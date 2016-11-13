@@ -1,19 +1,19 @@
-#Status
+#Intro
+oxit uses the Dropbox API to view/merge diffs of any two Dropbox file revisions with a git-style cli.
+
+So you can edit/save the same file simultaneously on multiple clients (e.g. laptop, Android Orgzly) and then later run oxit (on laptop) to view the diffs, merge last two (usually) revisions (and resolve-conflicts if necessary), and push merged file to Dropbox.
+
+The merge cmd is user setable and defaults to the emacs/client ediff cmd.
+
+##Keywords
+oxit emacs ediff org-mode orgzly dropbox cloud sync
+
+##Status
 Brand new as of late Oct 2016.
 
 Used dailyish by the author (w/2 Dropbox clients) but that's total usage so far -- beta testers aka early adopters and comments welcome (email gaak99 @ gmail.com).
 
-#Intro
-oxit uses the Dropbox API to observ/merge diffs of any two Dropbox file revisions with a git-style cli.
-
-So you can edit/save the same file on multiple clients (laptop, Android Orgzly) and then later run oxit (on laptop) to observe the diffs, merge last two revisions (and resolve-conflicts if necessary), and push merged file to Dropbox.
-
-The merge cmd is user setable and defaults to the emacs/client ediff cmd.
-
-## Keywords
-oxit emacs ediff org-mode orgzly dropbox cloud sync
-
-#Backstory
+##Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
 And Dropbox will save them for 1 month (free) or 1 year (paid).
 And as a long time casual Dropbox user this was news to me recently.
