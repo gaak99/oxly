@@ -36,7 +36,7 @@ $ oxit sub-cmd --help
 
 ```bash
 git clone https://github.com/gaak99/oxit.git
-sudo python setup.py install 
+cd oxit && sudo python setup.py install 
 ```
 * Dropbox auth token
 
@@ -81,6 +81,8 @@ auth_token=$token
 
 	(optional) $ oxit status
 
+	(optional) $ oxit diff --reva HEAD --revb index orgzly/foo.txt # diff(1) last Dropbox revision and staged version
+
 	(optional) $ oxit push --dry-run orgzly/foo.txt
 
 	$ oxit push --no-dry-run orgzly/foo.txt # upload merged file to Dropbox
@@ -92,12 +94,12 @@ auth_token=$token
 ###Tips/Tricks/Caveats/Gotchas
 
 ####Design
-* oxit is not git -- Def not git as no real commits, no branches, single user, etc. But as far as a poor-man's DVCS goes, oxit can be useful when git is not avail.
+* oxit is not git -- Def not git as no real commits, no branches, single user, etc. But as far as a poor-man's DVCS goes, oxit can be useful when git is not avail. Oxit just implements enough of a subset of git to support a basic clone-merge-add-push flow (and a few others to view the revisions and merged file).
 
 * Only handles a single file on Dropbox as remote repo (might be expanded to a dir tree in future). 
 
 * The merge is done by hand which is not as nice as automated merge but at least you have full control over merged file and conflicts must be resolved by hand in any model (_citation needed_) anyways.
-(It's not automated cuz it's a two-way merge cuz aka not a real VCS and no ancestor can be identified (how about gnu patch fuzzy type merge?)).
+(It's not automated cuz it's a two-way merge cuz not a real VCS as no common ancestor can be identified for three-way merge).
 
 ####Using oxit
 #####Tested/Used with w/only 2 Dropbox clients
