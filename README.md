@@ -11,7 +11,7 @@ oxit emacs ediff org-mode orgzly dropbox cloud sync
 ##Status
 Brand new as of late Oct 2016.
 
-Used dailyish by the author (w/2 Dropbox clients) but that's total usage so far -- beta testers aka early adopters and comments welcome (email gaak99 @ gmail.com).
+Used dailyish by the author (w/2 Dropbox clients) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue here on github).
 
 ##Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
@@ -51,14 +51,21 @@ auth_token=$token
 ```
 
 ###As needed (dailyish)
+#### Save same file/note on Dropbox clients
+1. Save file shared via Dropbox on laptop (~/Dropbox) as needed.
+   When you want to sync/merge with Orgzly don't save any more revisions on laptop until the oxit push is completed.
+   It's not terrible if you do -- no data loss -- but you may have to redo the oxit procedure below.
 
-1. Save same file shared via Dropbox on laptop (~/Dropbox) and locally on Android/Orgzly.
-   Select `Sync` notes on Orgzly.
-   If sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force save` (long press on note) on Orgzly.
+2. On Android/Orgzly save the same note (locally).
+
+3. On Android/Orgzly select `Sync` notes on Orgzly main menu.
+
+4. If sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force save` (long press on note) on Orgzly.
 
    The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
 
-2. Run oxit cmds on laptop
+####Merge last two revisions w/oxit on laptop
+1. Run oxit cmds on laptop
 
 	```bash
 	$ mkdir /tmp/myoxitrepo && cd /tmp/myoxitrepo 
@@ -88,13 +95,17 @@ auth_token=$token
 	$ oxit push --no-dry-run orgzly/foo.txt # upload merged file to Dropbox
 	```
 
-3. Finally on Orgzly select `Sync` to load merged/latest revision from Dropbox.
+####Finish with Orgzly sync
+1. Finally on Orgzly select main menu `Sync` to load merged/latest revision from Dropbox.
 
 
 ###Tips/Tricks/Caveats/Gotchas
 
 ####Design
-* oxit is not git -- Def not git as no real commits, no branches, single user, etc. But as far as a poor-man's DVCS goes, oxit can be useful when git is not avail. Oxit just implements enough of a subset of git to support a basic clone-merge-add-push flow (and a few others to view the revisions and merged file).
+* oxit is not git -- Def not git as no real commits, no branches, single user, etc. But as far as a poor-man's DVCS goes, oxit can be useful when git is not avail. Oxit just implements enough of a subset of git to support a basic clone-merge-add-push flow (and a few others to view the revisions and merged file). New files in wd/index not supported.
+
+* My use case is laptop and Android Orgzly so far only only that config has much real world use. More clients should be viable as long as two at a time are merged/pushed in a careful manner (don't save any non-oxit changes to Dropbox while this is being done). There's no locking done here so the user has to be careful and follow the procedure above.
+
 
 * Only handles a single file on Dropbox as remote repo (might be expanded to a dir tree in future). 
 
@@ -102,13 +113,11 @@ auth_token=$token
 (It's not automated cuz it's a two-way merge cuz not a real VCS as no common ancestor can be identified for three-way merge).
 
 ####Using oxit
-#####Tested/Used with w/only 2 Dropbox clients
-* My use case is laptop and Android Orgzly so it's been tested by myself much. More clients should be viable as long as two at a time are merged/pushed in a careful manner.
 
 #####Running merge-cmd
 * Use the ```merge --dry-run``` opt to see merge-cmd that will be run.
 By default it's ediff via emacsclient so the usual gotchas apply here -- in emacs run ```server-start```.
-* If you are like me and have several versions of emacs installed and emacsclient can't connect, try setting  ```merge --emacsclient-path``` (or sh $EMACSCLIENT_PATH).
+* If you are like me and have several versions of emacs installed and emacsclient can't connect, try setting  ```merge --emacsclient-path``` (or sh ```$EMACSCLIENT_PATH```).
 
 ####Using ediff
 * ediff skillz def a plus here. But if not currently avail then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- Emacs app.
@@ -139,13 +148,17 @@ python setup.py develop --install-dir /tmp/pypath
 PATH=$PATH:/tmp/pypath bash  oxit/tests/run-tests.sh
 ```
 
-#License
+#Legalese
+##License
 
 MIT.  See LICENSE file for full text.
 
-#Warranty
+##Warranty
  
 None.
+
+##Copyright
+Copyright (c) 2016 GT Barry (gaak99@gmail.com)
 
 # Refs
 <http://www.orgzly.com>
