@@ -160,7 +160,7 @@ None.
 ##Copyright
 Copyright (c) 2016 GT Barry (gaak99@gmail.com)
 
-# Refs
+#Refs
 <http://www.orgzly.com>
 
 <https://www.gnu.org/software/emacs/manual/html_node/ediff/>
@@ -170,4 +170,10 @@ Copyright (c) 2016 GT Barry (gaak99@gmail.com)
 #Props
 The hackers behind Dropbox, Orgzly, emacs/org-mode/ediff, Python/Click, git/github/git-remote-dropbox, and others I'm probably forgetting.
   
- 
+#Future work
+* More tests
+  * init tests - finer grained and mocked so can be done locally
+  * tests for each big fix
+* A magit style emacs ui?
+* oxitless?!? (inspired by gitless) 
+     
