@@ -35,7 +35,7 @@ import itertools
 import dropbox
 from dropbox.files import WriteMode
 from dropbox.exceptions import ApiError, AuthError
-from .utils import make_sure_path_exists, get_relpaths_recurse
+from .utils import make_sure_path_exists, get_relpaths_recurse, utc_to_localtz
 
 USER_AGENT = 'oxit/' + __version__
 OXITDIRVERSION = "1"
@@ -516,14 +516,14 @@ class Oxit():
         if oneline:
             for l in logs:
                 (rev, date, size) = l.split(OXITSEP1)
-                print '%s\t%s\t%s' % (rev, size.rstrip(), date)
+                print '%s\t%s\t%s' % (rev, size.rstrip(), utc_to_localtz(date))
         else:
             for l in logs:
                 (rev, date, size) = l.split(OXITSEP1)
                 print('Revision:  %s' % rev)
                 print('Size (bytes):  %s' % size.rstrip())
-                print('Server modified:  %s\n' % date)
-                
+                print('Server modified:  %s\n' % utc_to_localtz(date))
+ 
     def log(self, oneline, filepath):
         """List all local revisions (subset of) meta data""" 
         self._debug('debug: start log: %s' % filepath)
