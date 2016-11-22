@@ -11,7 +11,7 @@ oxit emacs ediff org-mode orgzly dropbox cloud sync
 ##Status
 Brand new as of late Oct 2016.
 
-b1 (beta 1) tagged and released (date)
+b1 (beta 1) tagged and released (Tue Nov 22 13:42:09 EST 2016)
 
 Used dailyish by the author (w/2 Dropbox clients) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue here on github).
 
