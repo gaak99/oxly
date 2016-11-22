@@ -11,6 +11,8 @@ oxit emacs ediff org-mode orgzly dropbox cloud sync
 ##Status
 Brand new as of late Oct 2016.
 
+b1 (beta 1) tagged and released.
+
 Used dailyish by the author (w/2 Dropbox clients) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue here on github).
 
 ##Backstory
@@ -21,7 +23,6 @@ And as a long time casual Dropbox user this was news to me recently.
 And my fave org-mode mobile app Orgzly supports Dropbox but not git(1) yet so I needed a way to merge notes that are modified on both laptop and mobile.
 
 And if you squint hard enough Dropbox's auto-versioning looks like lightweight commits and maybe we can simulate a (limited) DVCS here enough to be useful.
-
 
 #Usage
 ```bash
@@ -65,6 +66,7 @@ auth_token=$token
    The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
 
 ####Merge last two revisions w/oxit on laptop
+
 1. Run oxit cmds on laptop
 
 	```bash
@@ -171,9 +173,14 @@ Copyright (c) 2016 GT Barry (gaak99@gmail.com)
 The hackers behind Dropbox, Orgzly, emacs/org-mode/ediff, Python/Click, git/github/git-remote-dropbox, and others I'm probably forgetting.
   
 #Future work
-* More tests
-  * init tests - finer grained and mocked so can be done locally
-  * tests for each big fix
+## Features
+* Remote repo can be a dir (not just a file as currently)
+
+##More tests
+* init tests - finer grained and mocked so can be done locally
+* tests for each big fix
+
+##Next level sh*t
 * A magit style emacs ui?
 * oxitless?!? (inspired by gitless) 
      
