@@ -630,7 +630,8 @@ class Oxit():
             self._save_repo(self.repo)
             print('Re-cloning to get current meta data/data from Dropbox...')
             self.clone(dry_run, dropbox_url, nrevs)
-
+        print("\nPlease select Sync (regular, Forced not neccessary) note on Orgzly now.")
+    
     def _save_repo(self, dir):
             home = self._get_pname_home_base()
             destold = home + '.old.' + '%s' % random.randint(1, 99)
