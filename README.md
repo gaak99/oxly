@@ -1,19 +1,18 @@
 #Intro
-oxit uses the Dropbox API to view/merge diffs of any two Dropbox file revisions with a git-style cli.
+oxit uses the Dropbox API to view/merge diffs of any two Dropbox file revisions with a git style cli.
 
-So you can edit/save the same file simultaneously on multiple clients (e.g. laptop, Android Orgzly) and then later run oxit (on laptop) to view the diffs, merge last two (usually) revisions (and resolve-conflicts if necessary), and push merged file to Dropbox.
+So you can edit/save the same file simultaneously on multiple clients (e.g. Emacs/laptop, Orgzly/Android) and then later run oxit (on laptop) to view the diffs, merge last two (usually) revisions (and resolve-conflicts if necessary), and push merged file to Dropbox.
 
 The merge cmd is user setable and defaults to the emacs/client ediff cmd.
-
-##Keywords
-oxit emacs ediff org-mode orgzly dropbox cloud sync
 
 ##Status
 Brand new as of late Oct 2016.
 
-b1 (beta 1) tagged and released (Tue Nov 22 13:42:09 EST 2016)
+b2 (beta 2) tagged and released (Mon Nov 28 15:10:27 EST 2016).
 
-Used dailyish by the author (w/2 Dropbox clients) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue here on github).
+Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxit/issues).
+
+oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision so it's pretty low risk to give it a try.
 
 ##Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
@@ -65,9 +64,10 @@ auth_token=$token
 
    The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
 
-####Merge last two revisions w/oxit on laptop
+####Merge revisions
+Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are ready to be viewed/merged with oxit:
 
-1. Run oxit cmds on laptop
+1. Run oxit cmds on laptop something like this:
 
 	```bash
 	$ mkdir /tmp/myoxitrepo && cd /tmp/myoxitrepo 
@@ -98,7 +98,7 @@ auth_token=$token
 	```
 
 ####Finish with Orgzly sync
-1. Finally on Orgzly select main menu `Sync` to load merged/latest revision from Dropbox.
+1. Finally on Orgzly `Sync` (`Force Load` sync not necessary) to load merged/latest revision from Dropbox.
 
 
 ###Tips/Tricks/Caveats/Gotchas
@@ -115,6 +115,8 @@ auth_token=$token
 (It's not automated cuz it's a two-way merge cuz not a real VCS as no common ancestor can be identified for three-way merge).
 
 ####Using oxit
+
+#####Developed/tested on MacOS so non-Unix-like systems may be trouble
 
 #####Running merge-cmd
 * Use the ```merge --dry-run``` opt to see merge-cmd that will be run.
@@ -140,14 +142,14 @@ By default it's ediff via emacsclient so the usual gotchas apply here -- in emac
 (add-hook 'ediff-prepare-buffer-hook #'show-all)
 ```
 
-#Test
+#Tests
 
 ```bash
 export PYTHONPATH=/tmp/pypath
 python setup.py develop --install-dir /tmp/pypath
 
 # note valid Dropbox auth token needed in ~/.oxitconfig
-PATH=$PATH:/tmp/pypath bash  oxit/tests/run-tests.sh
+PATH=$PATH:/tmp/pypath bash oxit/tests/run-tests.sh
 ```
 
 #Legalese
@@ -160,7 +162,7 @@ MIT.  See LICENSE file for full text.
 None.
 
 ##Copyright
-Copyright (c) 2016 GT Barry (gaak99@gmail.com)
+Copyright (c) 2016 Glenn Barry (gmail: gaak99)
 
 #Refs
 <http://www.orgzly.com>
@@ -183,4 +185,4 @@ The hackers behind Dropbox, Orgzly, emacs/org-mode/ediff, Python/Click, git/gith
 ##Next level sh*t
 * A magit style emacs ui?
 * oxitless?!? (inspired by gitless) 
-     
+* CRDT!?! https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type     
