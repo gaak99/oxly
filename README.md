@@ -149,7 +149,7 @@ export PYTHONPATH=/tmp/pypath
 python setup.py develop --install-dir /tmp/pypath
 
 # note valid Dropbox auth token needed in ~/.oxitconfig
-PATH=$PATH:/tmp/pypath bash oxit/tests/run-tests.sh
+PATH=/tmp/pypath:$PATH bash oxit/tests/run-tests.sh
 ```
 
 #Legalese
