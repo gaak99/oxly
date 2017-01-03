@@ -12,7 +12,7 @@ b2 (beta 2) tagged and released (Mon Nov 28 15:10:27 EST 2016).
 
 Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxit/issues).
 
-oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision so it's pretty low risk to give it a try.
+oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision so it's pretty low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want using the Dropbox.com site.
 
 ##Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
@@ -56,9 +56,9 @@ auth_token=$token
    When you want to sync/merge with Orgzly don't save any more revisions on laptop until the oxit push is completed.
    It's not terrible if you do -- no data loss -- but you may have to redo the oxit procedure below.
 
-2. On Android/Orgzly save the same note (locally).
+2. With Orgzly save (locally) the same note.
 
-3. On Android/Orgzly select `Sync` notes on Orgzly main menu.
+3. With Orgzly select `Sync` notes on Orgzly main menu.
 
 4. If sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force save` (long press on note) on Orgzly.
 
@@ -170,6 +170,8 @@ Copyright (c) 2016 Glenn Barry (gmail: gaak99)
 <https://www.gnu.org/software/emacs/manual/html_node/ediff/>
 
 <http://blog.plasticscm.com/2010/11/live-to-merge-merge-to-live.html?m=1>
+
+<https://cloudrail.com/compare-consistency-models-of-cloud-storage-services/>
 
 #Props
 The hackers behind Dropbox, Orgzly, emacs/org-mode/ediff, Python/Click, git/github/git-remote-dropbox, and others I'm probably forgetting.
