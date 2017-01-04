@@ -3,11 +3,14 @@ from setuptools import setup, find_packages
 setup(
     name='oxit',
     description='oxit - observe/merge diffs in Dropbox file revisions',
-    version='0.7.21',
+    version='0.7.24',
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
         'Click',
+        'dropbox',
+        'pytz',
+        'tzlocal',
     ],
     entry_points='''
         [console_scripts]
