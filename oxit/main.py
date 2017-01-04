@@ -553,7 +553,7 @@ class Oxit():
             print("Uploading staged " + path + " to Dropbox as " +
                   rem_path + " ...")
             try:
-                self.dbx.files_upload(f, rem_path, mode=WriteMode('overwrite'))
+                self.dbx.files_upload(f.read(), rem_path, mode=WriteMode('overwrite'))
                 print('... upload complete.')
             except ApiError as err:
                 # This checks for the specific error where a user doesn't have
