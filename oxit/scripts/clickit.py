@@ -120,7 +120,7 @@ def checkout(oxit, filepath):
     oxit.checkout(filepath)
 
 @cli.command(help='Display modded file name in index and/or working dir.')
-@click.argument('filepath', required=False, default=None)
+@click.argument('filepath', required=True, default=None)
 @click.pass_obj
 def status(oxit, filepath):
     oxit.status(filepath)

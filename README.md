@@ -84,11 +84,11 @@ Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are
 
 	(note merged buffer should be saved in repo working dir -- $repo/$filepath, *not* under $repo/.oxit/)
 
-	(optional) $ oxit status
+	(optional) $ oxit status orgzly/foo.txt
 
 	$ oxit add orgzly/foo.txt # add merged file to staging area
 
-	(optional) $ oxit status
+	(optional) $ oxit status orgzly/foo.txt
 
 	(optional) $ oxit diff --reva HEAD --revb index orgzly/foo.txt # diff(1) last Dropbox revision and staged version
 
