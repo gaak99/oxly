@@ -8,11 +8,11 @@ The merge cmd is user setable and defaults to the emacs/client ediff cmd.
 ##Status
 Brand new as of late Oct 2016.
 
-b2 (beta 2) tagged and released (Mon Nov 28 15:10:27 EST 2016).
+You may want to try master HEAD before a release.
 
 Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxit/issues).
 
-oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision so it's pretty low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want using the Dropbox.com site.
+oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision, so it's pretty low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want using the Dropbox.com site.
 
 ##Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
@@ -38,11 +38,12 @@ $ oxit sub-cmd --help
 git clone https://github.com/gaak99/oxit.git
 cd oxit && sudo python setup.py install 
 ```
-* Dropbox auth token
+* Dropbox API app and OAuth 2 token
 
-Generate your auth (w/full access to files and types) from Dropbox app console
+Create a Dropbox API app (w/full access to files and types) from Dropbox app console
    `<https://www.dropbox.com/developers/apps>`
-   
+and generate an access token for yourself.
+
 And add it to ~/.oxitconfig. Note no quotes needed around $token.
 
 ```
@@ -146,7 +147,7 @@ By default it's ediff via emacsclient so the usual gotchas apply here -- in emac
 
 ```bash
 export PYTHONPATH=/tmp/pypath
-python setup.py develop --install-dir /tmp/pypath
+mkdir /tmp/pypath && python setup.py develop --install-dir /tmp/pypath
 
 # note valid Dropbox auth token needed in ~/.oxitconfig
 PATH=/tmp/pypath:$PATH bash oxit/tests/run-tests.sh
