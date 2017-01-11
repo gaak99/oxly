@@ -54,7 +54,7 @@ DEFAULT_DIFF_CMD = 'diff %s %s'
 
 class Oxit():
     """Oxit class -- use the Dropbox API to observ/merge
-          diffs of any two Dropbox file revision
+          diffs of any two Dropbox file revisions
     """
     def __init__(self, oxit_conf, oxit_repo, debug):
         """Initialize Oxit class.
@@ -124,7 +124,7 @@ class Oxit():
     def _get_pname_repo_base(self):
         return self.repo
 
-    def _get_pname_by_rev(self, path, rev='head'):
+    def _head2hash(self, path, rev):
         if rev == 'head':
             logs = self._get_log(path)
             h = logs[0]
@@ -132,9 +132,14 @@ class Oxit():
         elif rev == 'headminus1':
             logs = self._get_log(path)
             if len(logs) == 1:
-                sys.exit('error:  only one rev so far so no headminus1')
+                sys.exit('warning: only one rev so far so no headminus1')
             h = logs[1]
             (rev, date, size) = h.split(OXITSEP1)
+        return rev
+
+    def _get_pname_by_rev(self, path, rev='head'):
+        if rev == 'head' or rev == 'headminus1':
+            rev = self._head2hash(path, rev)
 
         self._debug('by_rev: rev=%s' % rev)
         pn_revdir = self._get_pname_home_revsdir(path)
@@ -161,6 +166,27 @@ class Oxit():
     def _get_pname_home_paths(self):
         path = self._get_pname_home_base() + '/.oxit' + OXITSEP1 + 'filepaths'
         return os.path.expanduser(path)
+
+    def _get_pname_by_wdrev(self, path, rev):
+        if rev == 'head' or rev == 'headminus1':
+            rev = self._head2hash(path, rev)
+
+        return self._get_pname_wt_path(path) + OXITSEP1 + rev
+
+    def _get_pname_wdrev_ln(self, path, rev):
+        src = self._get_pname_by_rev(path, rev)
+        dest = self._get_pname_by_wdrev(path, rev)
+        if not os.path.isfile(dest):
+            self._debug("_get_pname_wdrev_ln: src/dest hard linkn me maybe")
+            os.system("ln %s %s" % (src, dest))
+        else:
+            isrc = os.stat(src).st_ino
+            idest = os.stat(dest).st_ino
+            self._debug("_get_pname_wdrev_ln: src/dest got dest file now cmp inodes (%d)" % isrc)
+            if isrc != idest:
+                # should not happen
+                sys.exit("error: not a hard link (%s, %s)" % (src, dest))
+        return dest
 
     # End get_pname internal api
 
@@ -420,8 +446,9 @@ class Oxit():
 
         ap = wd_or_index(reva, path)
         bp = wd_or_index(revb, path)
-        ap = ap if ap else self._get_pname_by_rev(path, reva)
-        bp = bp if bp else self._get_pname_by_rev(path, revb)
+        ap = ap if ap else self._get_pname_wdrev_ln(path, reva)
+        self._debug("_get_diff_pair: ap=%s" % ap)
+        bp = bp if bp else self._get_pname_wdrev_ln(path, revb)
         return ap, bp
 
     def _diff_one_path(self, diff_cmd, reva, revb,  path):
