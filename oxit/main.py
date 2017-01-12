@@ -42,6 +42,7 @@ OXITSEP2 = ':::'
 OXITHOME = '.oxit'
 OXITMETAMETA = 'metameta'
 OXITINDEX = 'index'
+OLDDIR = '.old'
 
 # Default merge cmd
 MERGE_BIN = "emacsclient"
@@ -184,8 +185,10 @@ class Oxit():
             idest = os.stat(dest).st_ino
             self._debug("_get_pname_wdrev_ln: src/dest got dest file now cmp inodes (%d)" % isrc)
             if isrc != idest:
-                # should not happen
-                sys.exit("error: not a hard link (%s, %s)" % (src, dest))
+                make_sure_path_exists(OLDDIR)
+                os.system("mv %s %s" % (dest, OLDDIR))
+                self._debug("_get_pname_wdrev_ln: post old ln mv, src/dest hard linkn me maybe")
+                os.system("ln %s %s" % (src, dest))
         return dest
 
     # End get_pname internal api
@@ -505,12 +508,10 @@ class Oxit():
     def init(self):
         """Initialize local repo .oxit dir"""
         base_path = self._get_pname_home_base()
-        if os.path.isdir(base_path):
-            print('error: %s dir exists. Pls mv or rm.' % base_path)
-            exit(1)
-        if os.path.isfile(base_path):
-            print('error: %s file exists. Pls mv or rm.' % base_path)
-            exit(1)
+        if os.path.isdir(base_path) or os.path.isfile(base_path):
+            dest = self._get_pname_repo_base() + '/' + OLDDIR + '/.oxit.' + str(os.getpid())
+            print("Old .oxit exists, moving it to %s" % dest)
+            os.system("mv %s %s" % (base_path, dest))
 
         make_sure_path_exists(base_path)
         mm_path = self._get_pname_mmpath()
