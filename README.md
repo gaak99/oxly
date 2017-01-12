@@ -127,7 +127,6 @@ By default it's ediff via emacsclient so the usual gotchas apply here -- in emac
 ####Using ediff
 * ediff skillz def a plus here. But if not currently avail then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- Emacs app.
 * Typically in ediff you'll choose buffer A or buffer B for each change chunk, but for this type of merge (2 way) sometimes (appended chunks in A&B for example) you may want both and thus you may need to hand edit the merge buffer (better way?).
-* The merged buffer should be saved in repo working dir -- ```$repo/$filepath```, *not* under ```$repo/.oxit/```.
 * Orgzly seems to add blank line(s) so don't ediff merge them out on Emacs else u will keep seeing them come back -- zombielike --  to haunt you and must re-merge again and again.
 * BTW if you don't dig your ediff config try mines (that I found on the Net)
 
