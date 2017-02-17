@@ -1,5 +1,5 @@
 #Intro
-oxit uses the Dropbox API to view/merge diffs of any two Dropbox file revisions with a git style cli.
+oxit uses the Dropbox API to view/merge diffs of any two Dropbox file revisions with a git-like cli/flow.
 
 So you can edit/save the same file simultaneously on multiple clients (e.g. Emacs/laptop, Orgzly/Android) and then later run oxit (on laptop) to view the diffs, merge last two (usually) revisions (and resolve-conflicts if necessary), and push merged file to Dropbox.
 
@@ -117,7 +117,7 @@ Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are
 
 ####Using oxit
 
-#####Developed/tested on MacOS so non-Unix-like systems may be trouble
+#####Developed/tested on MacOS and Linux so non-Unix-like systems may be trouble
 
 #####Running merge-cmd
 * Use the ```merge --dry-run``` opt to see merge-cmd that will be run.
