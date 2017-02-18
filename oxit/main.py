@@ -509,6 +509,7 @@ class Oxit():
         """Initialize local repo .oxit dir"""
         base_path = self._get_pname_home_base()
         if os.path.isdir(base_path) or os.path.isfile(base_path):
+            make_sure_path_exists(OLDDIR)
             dest = self._get_pname_repo_base() + '/' + OLDDIR + '/.oxit.' + str(os.getpid())
             print("Old .oxit exists, moving it to %s" % dest)
             os.system("mv %s %s" % (base_path, dest))
