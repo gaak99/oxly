@@ -8,7 +8,7 @@ The merge cmd is user setable and defaults to the emacs/client ediff cmd.
 ##Status
 Brand new as of late Oct 2016.
 
-You may want to try master HEAD before a release.
+You may want to try master HEAD before fetching a release.
 
 Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxit/issues).
 
@@ -61,7 +61,7 @@ auth_token=$token
 
 3. With Orgzly select `Sync` notes on Orgzly main menu.
 
-4. If sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force save` (long press on note) on Orgzly.
+4. If sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force Save` (long press on note) on Orgzly.
 
    The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
 
@@ -82,8 +82,6 @@ Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are
 	(optional) $ oxit merge --dry-run orgzly/foo.txt
 
 	$ oxit merge --no-dry-run orgzly/foo.txt # merge last two revisions (with emacs ediff)
-
-	(note merged buffer should be saved in repo working dir -- $repo/$filepath, *not* under $repo/.oxit/)
 
 	(optional) $ oxit status orgzly/foo.txt
 
