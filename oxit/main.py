@@ -509,10 +509,7 @@ class Oxit():
         """Initialize local repo .oxit dir"""
         base_path = self._get_pname_home_base()
         if os.path.isdir(base_path) or os.path.isfile(base_path):
-            make_sure_path_exists(OLDDIR)
-            dest = self._get_pname_repo_base() + '/' + OLDDIR + '/.oxit.' + str(os.getpid())
-            print("Old .oxit exists, moving it to %s" % dest)
-            os.system("mv %s %s" % (base_path, dest))
+            self._save_repo()
 
         make_sure_path_exists(base_path)
         mm_path = self._get_pname_mmpath()
@@ -654,18 +651,19 @@ class Oxit():
         dropbox_url = self._get_mmval('remote_origin')
         if dropbox_url and post_push_clone:
             nrevs = self._get_mmval('nrevs')
-            self._save_repo(self.repo)
+            self._save_repo()
             print('Re-cloning to get current meta data/data from Dropbox...')
             self.clone(dry_run, dropbox_url, nrevs)
         print("\nPlease select Sync (regular, Forced not neccessary) note on Orgzly now.")
-    
-    def _save_repo(self, dir):
-            home = self._get_pname_home_base()
-            destold = home + '.old.' + '%s' % random.randint(1, 99)
-            print('Moving/saving current repo home %s to %s ...'
-                  % (home, destold))
-            os.system('mv %s %s' % (home, destold))
-        
+
+    def _save_repo(self):
+        home = self._get_pname_repo_base()
+        make_sure_path_exists(home + '/' + OLDDIR)
+        dest = home + '/' + OLDDIR + '/.oxit.' + str(os.getpid())
+        print('Moving/saving old %s to %s ...'
+              % (home + '/.oxit', dest))
+        os.system('mv %s %s' % (home + '/.oxit', dest))
+
     def _get_mmval(self, key):
         mm_path = self._get_pname_mmpath()
         if not os.path.isfile(mm_path):
