@@ -83,6 +83,8 @@ Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are
 
 	$ oxit merge --no-dry-run orgzly/foo.txt # merge last two revisions (with emacs ediff)
 
+	(via ediff save merged emacs buf to orgzly/foo.txt)
+
 	(optional) $ oxit status orgzly/foo.txt
 
 	$ oxit add orgzly/foo.txt # add merged file to staging area
