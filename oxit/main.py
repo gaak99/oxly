@@ -30,21 +30,24 @@ import ConfigParser
 import string
 import json
 import itertools
+import subprocess as sp
+import pickledb
 import dropbox
 from dropbox.files import WriteMode
 from dropbox.exceptions import ApiError, AuthError
 from .utils import make_sure_path_exists, get_relpaths_recurse, utc_to_localtz
+from .utils import calc_dropbox_content_hash
 
 USER_AGENT = 'oxit/' + __version__
 OXITDIRVERSION = "1"
 OXITSEP1 = '::'
 OXITSEP2 = ':::'
 OXITHOME = '.oxit'
-OXITMETAMETA = 'metameta'
+OXITMETAMETA = 'metametadb.json'
 OXITINDEX = 'index'
 OLDDIR = '.old'
 
-# Default merge cmd
+# defaults 2-way diff/merge
 MERGE_BIN = "emacsclient"
 MERGE_EVAL = "--eval"
 MERGE_EVALFUNC = "ediff-merge-files"
@@ -52,12 +55,21 @@ DEFAULT_MERGE_CMD = MERGE_BIN + ' ' + MERGE_EVAL + ' \'('\
                     + MERGE_EVALFUNC + ' %s %s' + ')\''
 DEFAULT_DIFF_CMD = 'diff %s %s'
 
+# defaults 3-way diff/merge
+DEFAULT_EDIT_CMD = 'emacsclient %s'
+DIFF3_BIN = 'diff3'
+DIFF3_BIN_ARGS = '-m'
+OXIT_HDR = '#+OXIT:'
+ORG_HDR_TITlE = '#+TITLE:'
+OXIT_HDR_ANC_REV = 'ancestor_rev'
+#ANCDBNAME = '_oxit-ancestor-pickledb.org'
+ANCDBNAME = '_oxit_ancestor_pickledb.json'
 
 class Oxit():
     """Oxit class -- use the Dropbox API to observ/merge
           diffs of any two Dropbox file revisions
     """
-    def __init__(self, oxit_conf, oxit_repo, debug):
+    def __init__(self, oxit_conf, oxit_repo, debug, orgzly_dir='orgzly'):
         """Initialize Oxit class.
 
         oxit_conf:  user's conf file path
@@ -68,46 +80,73 @@ class Oxit():
         self.home = OXITHOME
         self.conf = oxit_conf
         self.dbx = None
-
+        self.mmdb_path = self.repo + '/' + OXITHOME + '/.oxit' + OXITSEP1 + OXITMETAMETA  
+        self.mmdb = pickledb.load(self.mmdb_path, False)
+        
     def _debug(self, s):
         if self.debug:
             print(s)  # xxx stderr?
 
     def _download_data(self, md_l, src, dest, nrevs):
-        # Save log info
+        #xxx can prolly download these concurrently w/mp
         log_path = self._get_pname_logpath(src)
         if os.path.isfile(log_path):
             os.remove(log_path)
 
         make_sure_path_exists(os.path.dirname(log_path))
-        logf = open(os.path.expanduser(log_path), "wb")
-        for md in md_l:
-            rev = md.rev
-            dest_data = self._get_pname_by_rev(src, rev)
-            self._debug('_download_data: dest_data %s' % dest_data)
-            try:
-                self.dbx.files_download_to_file(dest_data, src, rev)
-            except Exception as err:
-                sys.exit('Call to Dropbox to download file data failed: %s'
+        if self.dbx == None:
+            self._new_dbx()
+        with open(os.path.expanduser(log_path), "wb") as logf:
+            for md in md_l:
+                rev = md.rev
+                dest_data = self._get_pname_by_rev(src, rev)
+                self._debug('_download_data: dest_data %s' % dest_data)
+                self._debug('_download_data: src %s' % src)
+                try:
+                    self.dbx.files_download_to_file(dest_data, src, rev)
+                except Exception as err:
+                    sys.exit('Call to Dropbox to download file data failed: %s'
+                             % err)
+                logf.write('%s%s%s%s%s%s%s\n' % (rev, OXITSEP1,
+                                             md.server_modified,
+                                             OXITSEP1, md.size,
+                                             OXITSEP1, md.content_hash,))
+
+    def _download_ancdb(self, ancdb_path):
+        self._debug('_download_ancdb: ancdb_path %s' % ancdb_path)
+        ancdb_fp = self.repo + '/' + ancdb_path # full path
+        rem_path = '/'+ancdb_path
+        if self.dbx == None:
+            self._new_dbx()
+        try:
+            self.dbx.files_download_to_file(ancdb_fp, rem_path)
+
+        except ApiError as err:
+            if err.error.is_path() and err.error.get_path().is_not_found():
+                print('Warning: ancestor db %s not found on Dropbox.' % rem_path)
+                print('Warning: 3-way merge cant be done, try 2-way merge (see also: oxit merge2 --help)')
+                print('Warning: See also: oxit ancdb_set --help')
+                print('Warning: See also: oxit ancdb_push --help')
+                sys.exit()
+            else:
+                sys.exit('Call to Dropbox to download ancestor db data failed: %s'
                          % err)
-
-            logf.write('%s%s%s%s%s\n' % (rev,
-                                         OXITSEP1,
-                                         md.server_modified,
-                                         OXITSEP1,
-                                         md.size))
-        logf.close()
-
+        except Exception as err:
+            sys.exit('Call to Dropbox to download ancestor db data failed: %s'
+                     % err)
+                
     def _get_revs(self, path, nrevs=10):
         print("Finding %d latest revisions on Dropbox..." % nrevs)
+        if self.dbx == None:
+            self._new_dbx()                    
         try:
-            revisions = sorted(self.dbx.files_list_revisions(path,
-                                                             limit=nrevs).entries,
-                               key=lambda entry: entry.server_modified,
-                               reverse=True)
+            revs = sorted(self.dbx.files_list_revisions(path,
+                                                        limit=nrevs).entries,
+                          key=lambda entry: entry.server_modified,
+                          reverse=True)
         except Exception as err:
             sys.exit('Call to Dropbox to list file revisions failed: %s' % err)
-        return revisions
+        return revs
 
     # Start get_pname internal api
     #
@@ -125,22 +164,35 @@ class Oxit():
     def _get_pname_repo_base(self):
         return self.repo
 
-    def _head2hash(self, path, rev):
+    def _hash2rev(self, path, hash):
+        self._debug('_hash2rev: %s, %s' % (len(hash), hash[:8]))
+        logs = self._get_log(path)
+        if logs == None:
+            return None
+        for l in logs:
+            (rev, date, size, content_hash) = l.split(OXITSEP1)
+            content_hash = content_hash.strip()
+            #self._debug('_hash2rev: %s, %d, %s' % (rev, len(content_hash), content_hash[:8]))
+            if hash == content_hash:
+                return rev
+        return None
+        
+    def _head2rev(self, path, rev):
         if rev == 'head':
             logs = self._get_log(path)
             h = logs[0]
-            (rev, date, size) = h.split(OXITSEP1)
+            (rev, date, size, content_hash) = h.split(OXITSEP1)
         elif rev == 'headminus1':
             logs = self._get_log(path)
             if len(logs) == 1:
                 sys.exit('warning: only one rev so far so no headminus1')
             h = logs[1]
-            (rev, date, size) = h.split(OXITSEP1)
+            (rev, date, size, content_hash) = h.split(OXITSEP1)
         return rev
 
     def _get_pname_by_rev(self, path, rev='head'):
         if rev == 'head' or rev == 'headminus1':
-            rev = self._head2hash(path, rev)
+            rev = self._head2rev(path, rev)
 
         self._debug('by_rev: rev=%s' % rev)
         pn_revdir = self._get_pname_home_revsdir(path)
@@ -150,7 +202,8 @@ class Oxit():
     def _get_pname_logpath(self, path):
         return self._get_pname_home_revsdir(path) + '/' + 'log'
 
-    def _get_pname_mmpath(self):
+    #xxx
+    def OLD_get_pname_mmpath(self):
         mm_path = self._get_pname_home_base() + '/.oxit'\
                   + OXITSEP1 + OXITMETAMETA
         return os.path.expanduser(mm_path)
@@ -170,13 +223,33 @@ class Oxit():
 
     def _get_pname_by_wdrev(self, path, rev):
         if rev == 'head' or rev == 'headminus1':
-            rev = self._head2hash(path, rev)
+            rev = self._head2rev(path, rev)
 
         return self._get_pname_wt_path(path) + OXITSEP1 + rev
 
-    def _get_pname_wdrev_ln(self, path, rev):
+    #todo nukeme
+    def OLD_get_pname_wdrev_ln(self, path, rev):
         src = self._get_pname_by_rev(path, rev)
         dest = self._get_pname_by_wdrev(path, rev)
+        if not os.path.isfile(dest):
+            self._debug("_get_pname_wdrev_ln: src/dest hard linkn me maybe")
+            os.system("ln %s %s" % (src, dest))
+        else:
+            isrc = os.stat(src).st_ino
+            idest = os.stat(dest).st_ino
+            self._debug("_get_pname_wdrev_ln: src/dest got dest file now cmp inodes (%d)" % isrc)
+            if isrc != idest:
+                make_sure_path_exists(OLDDIR)
+                os.system("mv %s %s" % (dest, OLDDIR))
+                self._debug("_get_pname_wdrev_ln: post old ln mv, src/dest hard linkn me maybe")
+                os.system("ln %s %s" % (src, dest))
+        return dest
+
+    #todo merge with above _ln()
+    def _get_pname_wdrev_ln(self, path, rev, suffix=''):
+        src = self._get_pname_by_rev(path, rev)
+        dest = self._get_pname_by_wdrev(path, rev)
+        dest = dest + suffix
         if not os.path.isfile(dest):
             self._debug("_get_pname_wdrev_ln: src/dest hard linkn me maybe")
             os.system("ln %s %s" % (src, dest))
@@ -270,30 +343,11 @@ class Oxit():
     def clone(self, dry_run, src_url, nrevs):
         """Given a dropbox url for one file*, fetch the
         n revisions of the file and store locally in repo's
-         .oxit and checkout HEAD to wd.
+        .oxit dir and checkout HEAD to working dir.
         *current limit -- might be expanded
         """
-        self._debug('debug clone: %s' % (src_url))
         nrevs = int(nrevs)
         self._debug('debug clone: nrevs=%d' % (nrevs))
-
-        token = self._get_conf('auth_token')
-        if not token:
-            sys.exit("ERROR: auth_token not in ur oxit conf file")
-        self.dbx = dropbox.Dropbox(token, user_agent=USER_AGENT)
-        try:
-            self.dbx.users_get_current_account()
-            self._debug('debug clone auth ok')
-        except dropbox.exceptions.HttpError as err:
-            sys.exit('Call to Dropbox failed: http error')
-        # except requests.exceptions.ConnectionError:
-            # sys.exit('Call to Dropbox failed: https connection')
-        except AuthError as err:
-            sys.exit("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
-        except dropbox.exceptions.ApiError as err:
-            sys.exit('Call to Dropbox failed: api error')
-        except Exception as err:
-            sys.exit('Call to Dropbox failed: %s' % err)
 
         if dry_run:
             print('clone dry-run: remote repo = %s' % src_url)
@@ -316,11 +370,17 @@ class Oxit():
         repo_home_dir = os.path.dirname(os.path.expanduser(repo_home))
         make_sure_path_exists(repo_home_dir)
 
+        # Concoct&save orgzly_dir&ancdb path
+        # ancdb per dir or one per tree??? --later
+        orgzly_dir = src_url.split('//')[1].split('/')[0] #top dir only
+        ancdb_path = orgzly_dir + '/' + ANCDBNAME
+
         # Save meta meta & update master file path list
-        mmf = open(self._get_pname_mmpath(), "a")
-        mmf.write('remote_origin=%s\n' % src_url)
-        mmf.write('nrevs=%d\n' % nrevs)
-        mmf.close()
+        self.mmdb.set('remote_origin', src_url)
+        self.mmdb.set('orgzly_dir', orgzly_dir)
+        self.mmdb.set('ancdb_path', ancdb_path)
+        self.mmdb.set('nrevs', nrevs)
+        self.mmdb.dump()
         self._repohome_files_put(file.strip('/'))
 
         # Finally! download the revs data and checkout themz to wt
@@ -330,6 +390,9 @@ class Oxit():
         self._download_data(md_l, file, self.repo, nrevs)
         self.checkout(file)
         print('... cloned into %s.' % self.repo)
+        print('Downloading ancestor db ...')
+        self._download_ancdb(ancdb_path)
+        print('... done')
 
     def _add_one_path(self, path):
         # cp file from working tree to index tree dir
@@ -485,7 +548,116 @@ class Oxit():
             self._debug('debug diff2 p=%s' % p)
             self._diff_one_path(diff_cmd, reva, revb, p)
 
+    def _new_ancdb(self):
+        ancdb_path = self.repo + '/' + self.mmdb.get('ancdb_path')
+        if not ancdb_path:
+            sys.exit('Error: ancestor db not found. Was oxit clone run?')
+        return pickledb.load(ancdb_path, 'False')
+
+    def _set_ancdb(self, filepath):
+        if filepath[0] != '/':
+            fp = self.repo + '/' + filepath
+        else:
+            fp = filepath
+        self._debug('_set_ancdb calc hash of %s' % fp)
+        hash = calc_dropbox_content_hash(fp)
+        ancdb = self._new_ancdb()
+        ancdb.set(filepath, hash)
+        ancdb.dump()
+        return hash
+    
+    def ancdb_set(self, filepath):
+        hash = self._set_ancdb(filepath)
+        print('Dropbox file content_hash %s added to ancestor db locally.' % hash[:8])
+
+    def ancdb_get(self, filepath):
+        ancdb = self._new_ancdb()
+        print ancdb.get(filepath)
+
+    def ancdb_push(self):
+        self._push_ancestor_db()
+        
+    def calc_dropbox_hash(self, filepath):
+        """Calculate/display the Dropbox files metadata content_hash of the version in the working dir.
+        """
+        # cmd needed for lulz?
+        print('The Dropbox file content_hash is %s' %
+              calc_dropbox_content_hash(filepath))
+    
+    def merge3(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+        """Run cmd for 3-way merge (aka auto-merge when possible)
+        """
+        (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), filepath)
+        ancdb = self._new_ancdb()
+        hash = ancdb.get(filepath)
+        if hash == None:
+            print('Warning hash==None: cant do a 3-way merge as ancestor revision not found.')
+            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+        ancestor_rev = self._hash2rev(filepath, hash)
+        if ancestor_rev == None: #not enough revs downloaded 
+            print('Warning ancrev==None: cant do a 3-way merge as no ancestor revision found.')
+            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+        f_ancestor = self._get_pname_wdrev_ln(filepath, ancestor_rev, suffix=':ANCESTOR')
+        cmd3 = [DIFF3_BIN, DIFF3_BIN_ARGS, fa, f_ancestor, fb]
+        self._debug('debug merge3: cmd3=%s' % cmd3)
+        if dry_run:
+            print('merge3 dry-run: %s' % cmd3)
+        tmpf = '/tmp/tmpoxitmerge3.' + str(os.getpid())
+        fname = '/dev/null' if dry_run else tmpf
+        with open(fname, 'w') as fout:
+            rt = sp.call(cmd3, stdout=fout)
+            self._debug('debug merge3: rt=%d, fname=%s' % (rt, fname))
+            if dry_run:
+                sys.exit('merge3 dry-run: %s exit value=%d' % (cmd3[0], rt))
+            if rt > 1:
+                sys.exit('Error: diff3 returned %d' % rt)
+            if rt == 0:
+                os.system('mv %s %s' % (fname, filepath))
+                print('No conflicts found. File fully merged locally in %s'  % filepath)
+                return
+            if rt == 1:
+                fcon = filepath + ':CONFLICT'
+                os.system('mv %s %s' % (fname, fcon))
+                print('Conflicts found. File with completed merges and conflicts is %s' % fcon)
+                return
+
+    def merge3_rc(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+        """If the 3-way diff/merge finished with some conflicts to resolve, run the editor to resolve them"
+        """
+        tmpf = ('/tmp/tmpoxitmerge_rc.' + str(os.getpid())) #xxx
+        fcon = filepath + ':CONFLICT'
+        if not os.path.isfile(fcon):
+            sys.exit('Error: no conflict file found. Try re-running merge cmd.')
+        os.system('cp %s %s' % (fcon, tmpf))
+        if emacsclient_path:
+            m_cmd = emacsclient_path + '/' + DEFAULT_EDIT_CMD
+            shcmd = m_cmd % (tmpf)
+        else: #xxx $EDITOR
+            shcmd = DEFAULT_EDIT_CMD % (tmpf)
+        if dry_run:
+            print('merge_rc dry-run: %s' % shcmd)
+            return
+        self._debug('debug merge_rc: shcmd=%s' % shcmd)
+        # end emacs/client session: C-x #
+        os.system(shcmd)
+        #xxx check if no changes before mv???
+        dest = filepath + ':POSTEDIT'
+        os.system('mv %s %s' % (tmpf, dest))
+        print('The post-edit file is %s' % dest)
+        print('If the file is ready to push to Dropbox: mv %s %s' %
+              (dest, filepath))
+        
     def merge(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+        """Run cmd for 3-way merge (aka auto-merge when possible)
+        """
+        self.merge3(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
+
+    def merge_rc(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+        """If the 3-way diff/merge finished with some conflicts to resolve, run the editor to resolve them"
+        """
+        self.merge3_rc(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
+
+    def merge2(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
         """Run merge_cmd to allow user to merge two revs.
 
         merge_cmd format:  program %s %s
@@ -499,7 +671,7 @@ class Oxit():
             shcmd = m_cmd % (qs(fa), qs(fb))
         else:
             shcmd = DEFAULT_MERGE_CMD % (qs(fa), qs(fb))
-        self._debug('debug merge: %s ' % shcmd)
+        self._debug('debug merge: %s' % shcmd)
         if dry_run:
             print('merge dry-run: %s' % shcmd)
             return
@@ -512,13 +684,11 @@ class Oxit():
             self._save_repo()
 
         make_sure_path_exists(base_path)
-        mm_path = self._get_pname_mmpath()
-        mmf = open(os.path.expanduser(mm_path), "w")
-        mmf.write('[misc]\n')
-        mmf.write('version=%s\n' % __version__)
-        mmf.write('home_version=%s\n' % OXITDIRVERSION)
-        mmf.write('repo_local=%s\n' % self.repo)
-        mmf.close()
+        self._debug('debug init: set basic vars in mmdb')
+        self.mmdb.set('version', __version__)
+        self.mmdb.set('home_version', OXITDIRVERSION)
+        self.mmdb.set('repo_local', self.repo)
+        self.mmdb.dump()
 
     def _get_log(self, path):
         self._debug('debug _get_log start %s' % path)
@@ -535,18 +705,21 @@ class Oxit():
 
     def _log_one_path(self, oneline, path):
         # on disk '$fileOXITSEP2log':
-        #   $rev||$date||$size
+        #   $rev $date $size $hash
         logs = self._get_log(path)
         if oneline:
             for l in logs:
-                (rev, date, size) = l.split(OXITSEP1)
-                print '%s\t%s\t%s' % (rev, size.rstrip(), utc_to_localtz(date))
+                (rev, date, size, content_hash) = l.split(OXITSEP1)
+                print '%s\t%s\t%s\t%s' % (rev, size.rstrip(),
+                                          utc_to_localtz(date),
+                                          content_hash[:8])
         else:
             for l in logs:
-                (rev, date, size) = l.split(OXITSEP1)
+                (rev, date, size, content_hash) = l.split(OXITSEP1)
                 print('Revision:  %s' % rev)
                 print('Size (bytes):  %s' % size.rstrip())
-                print('Server modified:  %s\n' % utc_to_localtz(date))
+                print('Server modified:  %s' % utc_to_localtz(date))
+                print('Content hash:  %s' % content_hash)
  
     def log(self, oneline, filepath):
         """List all local revisions (subset of) meta data""" 
@@ -569,12 +742,14 @@ class Oxit():
         # Skip if no change from current rev
         logs = self._get_log(path)
         head = logs[0]
-        (rev, date, size) = head.split(OXITSEP1)
+        (rev, date, size, hash) = head.split(OXITSEP1)
         head_path = self._get_pname_by_rev(path, rev)
         if filecmp.cmp(index_path, head_path):
-            print('%s: no change ... skipping ...' % path)
-            return
+            print('Warning: no change between working dir version and HEAD (latest version cloned).')
+            sys.exit('Warning: so no push needed.')
         self._debug('debug push one path: %s' % local_path)
+        if self.dbx == None:
+            self._new_dbx()                    
         with open(local_path, 'rb') as f:
             print("Uploading staged " + path + " to Dropbox as " +
                   rem_path + " ...")
@@ -593,8 +768,50 @@ class Oxit():
                 else:
                     print(err)
                     sys.exit(101)
+        hash = calc_dropbox_content_hash(local_path)
         os.remove(index_path)
+        return hash
 
+    def _new_dbx(self):
+        token = self._get_conf('auth_token')
+        if not token:
+            sys.exit("ERROR: auth_token not in ur oxit conf file brah")
+        self.dbx = dropbox.Dropbox(token, user_agent=USER_AGENT)
+        try:
+            self.dbx.users_get_current_account()
+            self._debug('debug push auth ok')
+        except AuthError as err:
+            sys.exit("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
+        except Exception as e:
+            sys.exit("ERROR: push call to Dropbox fail: %s" % e)
+
+    def _push_ancestor_db(self):
+        if self.dbx == None:
+            self._new_dbx()
+
+        ancdb_path = self.mmdb.get('ancdb_path')  # *ass*ume relative to repo
+        if not ancdb_path:
+            sys.exit('Error: ancestor db not found. Was oxit clone run?')
+        rem_path = '/' + ancdb_path
+        ancdb_fp = self.repo + '/' + ancdb_path # full path
+        with open(ancdb_fp, 'rb') as f:
+            print("Uploading ancestor db " + ancdb_path + " to Dropbox ...")
+            try:
+                self.dbx.files_upload(f.read(), rem_path, mode=WriteMode('overwrite'))
+                print('... upload complete.')
+            except ApiError as err:
+                # This checks for the specific error where a user doesn't have
+                # enough Dropbox space quota to upload this file
+                if (err.error.is_path() and
+                        err.error.get_path().error.is_insufficient_space()):
+                    sys.exit("ERROR: Cannot back up; insufficient space.")
+                elif err.user_message_text:
+                    print(err.user_message_text)
+                    sys.exit(100)
+                else:
+                    print(err)
+                    sys.exit(101)
+        
     def _get_index_paths(self):
         index_dir = self._get_pname_index()
         return get_relpaths_recurse(index_dir)
@@ -610,21 +827,11 @@ class Oxit():
         if post_push_clone:
                     self._debug('debug post_push_clone true')
 
-        token = self._get_conf('auth_token')
-        if not token:
-            sys.exit("ERROR: auth_token not in ur oxit conf file brah")
-        self.dbx = dropbox.Dropbox(token, user_agent=USER_AGENT)
-        try:
-            self.dbx.users_get_current_account()
-            self._debug('debug push auth ok')
-        except AuthError as err:
-            sys.exit("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
-        except Exception as e:
-            sys.exit("ERROR: push call to Dropbox fail: %s" % e)
-
         if filepath:
             if filepath not in [s.strip('./') for s in fp_l]:
-                sys.exit('push %s not in index' % filepath)
+                if filepath.startswith('dropbox:'):
+                    print('Error: file should be local path not url')
+                sys.exit('Error: %s not in index' % filepath)
             if dry_run:
                 print('push dryrun filepath: %s' % filepath)
                 print('push dryrun from local repo: %s' % self.repo)
@@ -632,6 +839,8 @@ class Oxit():
                       self._get_mmval('remote_origin'))
             else:
                 self._push_one_path(filepath)
+                hash = self._set_ancdb(filepath)
+                self._push_ancestor_db()
         else:
             if not fp_l:
                 print('Nothing to push')
@@ -643,7 +852,9 @@ class Oxit():
                     print('push dryrun to remote repo: %s' %
                           self._get_mmval('remote_origin'))
                 else:
-                    self._push_one_path(p)
+                    hash = self._push_one_path(p)
+                    if hash:
+                        self._push_ancestor_db(filepath, hash)
 
         if dry_run:
             return
@@ -665,19 +876,9 @@ class Oxit():
         os.system('mv %s %s' % (home + '/.oxit', dest))
 
     def _get_mmval(self, key):
-        mm_path = self._get_pname_mmpath()
-        if not os.path.isfile(mm_path):
-            sys.exit('error: metameta file not found. oxit clone creates it.')
-        mm = ConfigParser.RawConfigParser()
-        mm.read(mm_path)
-        if key:
-            return mm.get('misc', key)
-        else:
-            return mm.items('misc')
+        return self.mmdb.get(key)
 
     def getmm(self, key):
         """Fetch internal oxit sys file vars -- mostly for debug"""
-        if key:
-            print('%s=%s' % (key, self._get_mmval(key)))
-        else:
-            print(self._get_mmval(key))
+        print('%s=%s' % (key, self._get_mmval(key)))
+

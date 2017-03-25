@@ -7,11 +7,14 @@ subsh_debug='--no-debug'
 tests_path=oxit/tests/oxit-test-basic.sh
 
 # top level dbx file
-path=oxit-testf.txt
+fname=oxit-testf.txt
+orgzly_dir=oxit-testmedir
+path=$orgzly_dir/$fname
 touch $dbxpath/$path
 date >> $dbxpath/$path
 repo=/tmp/test-oxit$RANDOM
-bash $sh_debug $tests_path 'top level file' $repo $path $subsh_debug
+bash $sh_debug $tests_path 'top level orgzly_dir/file' $repo $path $subsh_debug
+#exit 99 #tmp
 
 echo
 echo '======================================================================'

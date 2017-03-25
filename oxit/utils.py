@@ -32,3 +32,16 @@ def utc_to_localtz(dt_str):
     dt_utc = dt.replace(tzinfo=pytz.timezone('UTC'))
     dt_local = dt_utc.replace(tzinfo=pytz.utc).astimezone(local_tz)
     return dt_local.strftime("%Y-%m-%d %H:%M:%S %Z%z")
+
+#from __future__ import absolute_import, division, print_function, unicode_literals
+from dropbox_content_hasher import DropboxContentHasher
+
+def calc_dropbox_content_hash(fname):
+    hasher = DropboxContentHasher()
+    with open(fname, 'rb') as f:
+        while True:
+            chunk = f.read(1024)  # or whatever chunk size you want
+            if len(chunk) == 0:
+                break
+            hasher.update(chunk)
+    return hasher.hexdigest()

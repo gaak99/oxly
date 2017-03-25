@@ -86,7 +86,7 @@ def init(oxit):
 def log(oxit, oneline, filepath):
     oxit.log(oneline, filepath)
 
-@cli.command(help='Run merge-cmd to allow user to merge two revs.')
+@cli.command(help='Run 3-way merge-cmd to merge two revs.')
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--emacsclient-path', required=False,
               envvar='EMACSCLIENT_PATH',
@@ -102,6 +102,40 @@ def log(oxit, oneline, filepath):
 @click.pass_obj
 def merge(oxit, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
     oxit.merge(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
+
+@cli.command(help='Run 2-way merge-cmd to allow user to merge two revs.')
+@click.option('--dry-run/--no-dry-run', default=False)
+@click.option('--emacsclient-path', required=False,
+              envvar='EMACSCLIENT_PATH',
+              help='If necessary set full path of default emacsclient.')
+@click.option('--merge-cmd', required=False,
+              envvar='MERGE_CMD',
+              help='Program to merge two revs, default is ediff via emacsclient, format: prog %s %s')
+@click.option('--reva', required=False, default='HEADMINUS1',
+              help='Defaults to HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are working dir and index.')
+@click.option('--revb', required=False, default='HEAD',
+              help='Defaults to HEAD (latest rev in Dropbox) ... ditto --reva.')
+@click.argument('filepath')
+@click.pass_obj
+def merge2(oxit, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+    oxit.merge(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
+
+@cli.command(help='Run editor to allow user to resolve conflicts post-3-way-merge.')
+@click.option('--dry-run/--no-dry-run', default=False)
+@click.option('--emacsclient-path', required=False,
+              envvar='EMACSCLIENT_PATH',
+              help='If necessary set full path of default emacsclient.')
+@click.option('--merge-cmd', required=False,
+              envvar='MERGE_CMD',
+              help='Program to merge two revs, default is ediff via emacsclient, format: prog %s %s')
+@click.option('--reva', required=False, default='HEADMINUS1',
+              help='Defaults to HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are working dir and index.')
+@click.option('--revb', required=False, default='HEAD',
+              help='Defaults to HEAD (latest rev in Dropbox) ... ditto --reva.')
+@click.argument('filepath')
+@click.pass_obj
+def mergerc(oxit, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+    oxit.merge_rc(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
 
 @cli.command(help='Upload result of locally merged files to Dropbox.')
 @click.option('--dry-run/--no-dry-run', default=False)
@@ -130,6 +164,29 @@ def status(oxit, filepath):
 @click.pass_obj
 def getmetameta(oxit, key):
     oxit.getmm(key)
+
+@cli.command(help='Calculate and display Dropbox filesMetaData content_hash.')
+@click.argument('filepath')
+@click.pass_obj
+def calchash(oxit, filepath):
+    oxit.calc_dropbox_hash(filepath)
+
+@cli.command(help='Calculate and set Dropbox filesMetaData content_hash into ancestor db.')
+@click.argument('filepath')
+@click.pass_obj
+def ancdb_set(oxit, filepath):
+    oxit.ancdb_set(filepath)
+
+@cli.command(help='Get Dropbox filesMetaData content_hash from ancestor db.')
+@click.argument('filepath')
+@click.pass_obj
+def ancdb_get(oxit, filepath):
+    oxit.ancdb_get(filepath)
+
+@cli.command(help='Push ancestor db to Dropbox.')
+@click.pass_obj
+def ancdb_push(oxit):
+    oxit.ancdb_push()
 
 if __name__ == '__main__':
     cli()
