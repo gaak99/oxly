@@ -360,7 +360,7 @@ class Oxit():
         cf.read(path)
         return cf.get('misc', key)
 
-    def clone(self, dry_run, src_url, nrevs):
+    def clone(self, dry_run, src_url, nrevs, dl_ancdb=True):
         """Given a dropbox url for one file*, fetch the
         n revisions of the file and store locally in repo's
         .oxit dir and checkout HEAD to working dir.
@@ -410,9 +410,10 @@ class Oxit():
         self._download_data(md_l, file, self.repo, nrevs)
         self.checkout(file)
         print('... cloned into %s.' % self.repo)
-        print('Downloading ancestor db ...')
-        self._download_ancdb(ancdb_path)
-        print('... done')
+        if dl_ancdb:
+            print('Downloading ancestor db ...')
+            self._download_ancdb(ancdb_path)
+            print('... done')
 
     def _add_one_path(self, path):
         # cp file from working tree to index tree dir
@@ -869,7 +870,7 @@ class Oxit():
             nrevs = self._get_mmval('nrevs')
             self._save_repo()
             print('Re-cloning to get current meta data/data from Dropbox...')
-            self.clone(dry_run, dropbox_url, nrevs)
+            self.clone(dry_run, dropbox_url, nrevs, dl_ancdb=False)
         print("\nPlease select Sync (regular, Forced not neccessary) note on Orgzly now.")
 
     def _save_repo(self):
