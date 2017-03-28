@@ -32,6 +32,7 @@ import json
 import itertools
 import subprocess as sp
 import pickledb
+from functools import wraps
 import dropbox
 from dropbox.files import WriteMode
 from dropbox.exceptions import ApiError, AuthError
@@ -87,15 +88,36 @@ class Oxit():
         if self.debug:
             print(s)  # xxx stderr?
 
+    def _try_dbxauth(self):
+        token = self._get_conf('auth_token')
+        if not token:
+            sys.exit("ERROR: auth_token not in ur oxit conf file brah")
+        self.dbx = dropbox.Dropbox(token, user_agent=USER_AGENT)
+        try:
+            self.dbx.users_get_current_account()
+            self._debug('debug push auth ok')
+        except AuthError as err:
+            sys.exit("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
+        except Exception as e:
+            sys.exit("ERROR: push call to Dropbox fail: %s" % e)
+
+    def _dbxauth(fn):
+        @wraps(fn)
+        def dbxauth(*args, **kwargs):
+            #print 'gbdev: ' + fn.__name__ + " was called"
+            self = args[0]
+            if self.dbx == None:
+                self._try_dbxauth()
+            return fn(*args, **kwargs)
+        return dbxauth
+
+    @_dbxauth
     def _download_data(self, md_l, src, dest, nrevs):
         #xxx can prolly download these concurrently w/mp
         log_path = self._get_pname_logpath(src)
         if os.path.isfile(log_path):
             os.remove(log_path)
-
         make_sure_path_exists(os.path.dirname(log_path))
-        if self.dbx == None:
-            self._new_dbx()
         with open(os.path.expanduser(log_path), "wb") as logf:
             for md in md_l:
                 rev = md.rev
@@ -112,12 +134,11 @@ class Oxit():
                                              OXITSEP1, md.size,
                                              OXITSEP1, md.content_hash,))
 
+    @_dbxauth
     def _download_ancdb(self, ancdb_path):
         self._debug('_download_ancdb: ancdb_path %s' % ancdb_path)
         ancdb_fp = self.repo + '/' + ancdb_path # full path
         rem_path = '/'+ancdb_path
-        if self.dbx == None:
-            self._new_dbx()
         try:
             self.dbx.files_download_to_file(ancdb_fp, rem_path)
 
@@ -134,11 +155,10 @@ class Oxit():
         except Exception as err:
             sys.exit('Call to Dropbox to download ancestor db data failed: %s'
                      % err)
-                
+
+    @_dbxauth
     def _get_revs(self, path, nrevs=10):
         print("Finding %d latest revisions on Dropbox..." % nrevs)
-        if self.dbx == None:
-            self._new_dbx()                    
         try:
             revs = sorted(self.dbx.files_list_revisions(path,
                                                         limit=nrevs).entries,
@@ -733,6 +753,7 @@ class Oxit():
             if l > 1:
                 print()
 
+    @_dbxauth
     def _push_one_path(self, path):
         # Push a given path upstream
         rem_path = '/' + path
@@ -748,8 +769,6 @@ class Oxit():
             print('Warning: no change between working dir version and HEAD (latest version cloned).')
             sys.exit('Warning: so no push needed.')
         self._debug('debug push one path: %s' % local_path)
-        if self.dbx == None:
-            self._new_dbx()                    
         with open(local_path, 'rb') as f:
             print("Uploading staged " + path + " to Dropbox as " +
                   rem_path + " ...")
@@ -772,23 +791,9 @@ class Oxit():
         os.remove(index_path)
         return hash
 
-    def _new_dbx(self):
-        token = self._get_conf('auth_token')
-        if not token:
-            sys.exit("ERROR: auth_token not in ur oxit conf file brah")
-        self.dbx = dropbox.Dropbox(token, user_agent=USER_AGENT)
-        try:
-            self.dbx.users_get_current_account()
-            self._debug('debug push auth ok')
-        except AuthError as err:
-            sys.exit("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
-        except Exception as e:
-            sys.exit("ERROR: push call to Dropbox fail: %s" % e)
-
+    
+    @_dbxauth
     def _push_ancestor_db(self):
-        if self.dbx == None:
-            self._new_dbx()
-
         ancdb_path = self.mmdb.get('ancdb_path')  # *ass*ume relative to repo
         if not ancdb_path:
             sys.exit('Error: ancestor db not found. Was oxit clone run?')
