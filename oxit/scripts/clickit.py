@@ -60,7 +60,7 @@ def reset(oxit, filepath):
 def clone(oxit, dry_run, src, nrevs):
     oxit.clone(dry_run, src, nrevs)
 
-@cli.command(help='Run diff-cmd to display the data differences of two revisions.')
+@cli.command(help='Run diff(1) to display the data differences of two revisions.')
 @click.option('--diff-cmd', required=False,
               envvar='DIFF_CMD',
               help='Diff sh cmd, default is diff(1), format: program %s %s')
@@ -187,6 +187,17 @@ def ancdb_get(oxit, filepath):
 @click.pass_obj
 def ancdb_push(oxit):
     oxit.ancdb_push()
+
+@cli.command(help='Run cat(1) to display to stdout the data of a revision.')
+@click.option('--cat-cmd', required=False,
+              envvar='CAT_CMD',
+              help='Cat/display rev data, default is cat(1), format: program [opts] %s')
+@click.option('--rev', required=False, default='HEAD',
+              help='Default is HEAD (latest rev downloaded from Dropbox).')
+@click.argument('filepath', required=True, default=None)
+@click.pass_obj
+def cat(oxit, cat_cmd, rev, filepath):
+    oxit.cat(cat_cmd, rev, filepath)
 
 if __name__ == '__main__':
     cli()

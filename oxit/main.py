@@ -55,6 +55,7 @@ MERGE_EVALFUNC = "ediff-merge-files"
 DEFAULT_MERGE_CMD = MERGE_BIN + ' ' + MERGE_EVAL + ' \'('\
                     + MERGE_EVALFUNC + ' %s %s' + ')\''
 DEFAULT_DIFF_CMD = 'diff %s %s'
+DEFAULT_CAT_CMD = 'cat %s'
 
 # defaults 3-way diff/merge
 DEFAULT_EDIT_CMD = 'emacsclient %s'
@@ -267,11 +268,14 @@ class Oxit():
 
     #todo merge with above _ln()
     def _get_pname_wdrev_ln(self, path, rev, suffix=''):
+        """Return linked file path of rev::suffix in wd.
+        """
+        self._debug("_get_pname_wdrev_ln: %s, %s" % (path, rev))
         src = self._get_pname_by_rev(path, rev)
         dest = self._get_pname_by_wdrev(path, rev)
         dest = dest + suffix
         if not os.path.isfile(dest):
-            self._debug("_get_pname_wdrev_ln: src/dest hard linkn me maybe")
+            self._debug("_get_pname_wdrev_ln no dest lets ln it: %s, %s" % (src, dest))
             os.system("ln %s %s" % (src, dest))
         else:
             isrc = os.stat(src).st_ino
@@ -523,16 +527,16 @@ class Oxit():
         # todo: recurse wt --> list
         return [path]
 
-    def _get_diff_pair(self, reva, revb, path):
-        def wd_or_index(rev, p):
-            if rev == 'wd':
-                return self._get_pname_wt_path(p)
-            if rev == 'index':
-                return self._get_pname_index_path(p)
-            return None
+    def _wd_or_index(self, rev, p):
+        if rev == 'wd':
+            return self._get_pname_wt_path(p)
+        if rev == 'index':
+            return self._get_pname_index_path(p)
+        return None
 
-        ap = wd_or_index(reva, path)
-        bp = wd_or_index(revb, path)
+    def _get_diff_pair(self, reva, revb, path):
+        ap = self._wd_or_index(reva, path)
+        bp = self._wd_or_index(revb, path)
         ap = ap if ap else self._get_pname_wdrev_ln(path, reva)
         self._debug("_get_diff_pair: ap=%s" % ap)
         bp = bp if bp else self._get_pname_wdrev_ln(path, revb)
@@ -569,6 +573,40 @@ class Oxit():
             self._debug('debug diff2 p=%s' % p)
             self._diff_one_path(diff_cmd, reva, revb, p)
 
+    def _cat_one_path(self, cat_cmd, rev, path):
+        fp = self._wd_or_index(rev, path)
+        fp = fp if fp else self._get_pname_by_rev(path, rev)
+        cat_cmd = cat_cmd if cat_cmd else DEFAULT_CAT_CMD
+        self._debug('debug _cat_one_path: %s' % cat_cmd)
+        try:
+            shcmd = cat_cmd % (fp)
+        except TypeError:
+            sys.exit('cat cat-cmd bad format. Try: oxit cat --help')
+        self._debug('debug _cat_one_path: %s' % shcmd)
+        os.system(shcmd)
+            
+    def cat(self, cat_cmd, rev, filepath):
+        """Run cat_cmd to display cats from a revision of file.
+
+        cat_cmd format: program %s
+        """
+        self._debug('debug start cat: %s %s' % (rev, filepath))
+        if filepath:
+            if not os.path.isfile(self._get_pname_wt_path(filepath)):
+                sys.exit('error: file name not found in repo working dir -- spelled correctly?')
+            fp_l = [filepath]
+        else:
+            fp_l = self._get_wt_paths()
+
+        ifp_l = self._scrub_fnames(fp_l)
+        if not ifp_l:
+            sys.exit('warning: internal err cat: wt empty')
+        for p in ifp_l:
+            self._debug('debug cat p=%s' % p)
+            self._cat_one_path(cat_cmd,
+                               self._head2rev(p, rev.lower()),
+                               p)
+            
     def _new_ancdb(self):
         ancdb_path = self.repo + '/' + self.mmdb.get('ancdb_path')
         if not ancdb_path:
