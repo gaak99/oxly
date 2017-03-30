@@ -86,24 +86,21 @@ def init(oxit):
 def log(oxit, oneline, filepath):
     oxit.log(oneline, filepath)
 
-@cli.command(help='Run 3-way merge-cmd to merge two revs.')
+@cli.command(help='Run 3-way merge. Default: diff3 -m HEADMINUS1 ANCESTOR HEAD')
 @click.option('--dry-run/--no-dry-run', default=False)
-@click.option('--emacsclient-path', required=False,
-              envvar='EMACSCLIENT_PATH',
-              help='If necessary set full path of default emacsclient.')
 @click.option('--merge-cmd', required=False,
               envvar='MERGE_CMD',
-              help='Program to merge two revs, default is ediff via emacsclient, format: prog %s %s')
+              help='Program to merge three revs, default is: diff3 -m')
 @click.option('--reva', required=False, default='HEADMINUS1',
               help='Defaults to HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are working dir and index.')
 @click.option('--revb', required=False, default='HEAD',
               help='Defaults to HEAD (latest rev in Dropbox) ... ditto --reva.')
 @click.argument('filepath')
 @click.pass_obj
-def merge(oxit, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
-    oxit.merge(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
+def merge(oxit, dry_run, merge_cmd, reva, revb, filepath):
+    oxit.merge(dry_run, merge_cmd, reva, revb, filepath)
 
-@cli.command(help='Run 2-way merge-cmd to allow user to merge two revs.')
+@cli.command(help='Run 2-way merge (by hand). Default: (emacsclient) ediff HEADMINUS1 HEAD')
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--emacsclient-path', required=False,
               envvar='EMACSCLIENT_PATH',
@@ -118,7 +115,7 @@ def merge(oxit, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
 @click.argument('filepath')
 @click.pass_obj
 def merge2(oxit, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
-    oxit.merge(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
+    oxit.merge2(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
 
 @cli.command(help='Run editor to allow user to resolve conflicts post-3-way-merge.')
 @click.option('--dry-run/--no-dry-run', default=False)

@@ -643,7 +643,7 @@ class Oxit():
         print('The Dropbox file content_hash is %s' %
               calc_dropbox_content_hash(filepath))
     
-    def merge3(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+    def merge3(self, dry_run, merge_cmd, reva, revb, filepath):
         """Run cmd for 3-way merge (aka auto-merge when possible)
         """
         (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), filepath)
@@ -657,7 +657,14 @@ class Oxit():
             print('Warning ancrev==None: cant do a 3-way merge as no ancestor revision found.')
             sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
         f_ancestor = self._get_pname_wdrev_ln(filepath, ancestor_rev, suffix=':ANCESTOR')
-        cmd3 = [DIFF3_BIN, DIFF3_BIN_ARGS, fa, f_ancestor, fb]
+        mcmd = margs = None
+        if merge_cmd:
+            mc = merge_cmd.split(' ')
+            mcmd = mc[0]
+            margs = mc[1:] if len(mc)>1 else []
+        mcmd = [mcmd] if mcmd else [DIFF3_BIN]
+        margs = margs if margs else [DIFF3_BIN_ARGS]
+        cmd3 = mcmd + margs + [fa, f_ancestor, fb]
         self._debug('debug merge3: cmd3=%s' % cmd3)
         if dry_run:
             print('merge3 dry-run: %s' % cmd3)
@@ -706,10 +713,10 @@ class Oxit():
         print('If the file is ready to push to Dropbox: mv %s %s' %
               (dest, filepath))
         
-    def merge(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+    def merge(self, dry_run,merge_cmd, reva, revb, filepath):
         """Run cmd for 3-way merge (aka auto-merge when possible)
         """
-        self.merge3(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
+        self.merge3(dry_run, merge_cmd, reva, revb, filepath)
 
     def merge_rc(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
         """If the 3-way diff/merge finished with some conflicts to resolve, run the editor to resolve them"
