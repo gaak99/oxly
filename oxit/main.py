@@ -48,6 +48,7 @@ OXITHOME = '.oxit'
 OXITMETAMETA = 'metametadb.json'
 OXITINDEX = 'index'
 OLDDIR = '.old'
+HASHREVDB = 'hashrevdb.json'
 
 # defaults 2-way diff/merge
 MERGE_BIN = "emacsclient"
@@ -62,10 +63,6 @@ DEFAULT_CAT_CMD = 'cat %s'
 DEFAULT_EDIT_CMD = 'emacsclient %s'
 DIFF3_BIN = 'diff3'
 DIFF3_BIN_ARGS = '-m'
-OXIT_HDR = '#+OXIT:'
-ORG_HDR_TITlE = '#+TITLE:'
-OXIT_HDR_ANC_REV = 'ancestor_rev'
-#ANCDBNAME = '_oxit-ancestor-pickledb.org'
 ANCDBNAME = '_oxit_ancestor_pickledb.json'
 
 class Oxit():
@@ -83,7 +80,8 @@ class Oxit():
         self.home = OXITHOME
         self.conf = oxit_conf
         self.dbx = None
-        self.mmdb_path = self.repo + '/' + OXITHOME + '/.oxit' + OXITSEP1 + OXITMETAMETA  
+        # mmdb one per repo
+        self.mmdb_path = self.repo + '/' + OXITHOME + '/.oxit' + OXITSEP1 + OXITMETAMETA
         self.mmdb = pickledb.load(self.mmdb_path, False)
         
     def _debug(self, s):
@@ -113,18 +111,22 @@ class Oxit():
             return fn(*args, **kwargs)
         return dbxauth
 
-    def _log_revs_md(self, md_l, log_path):
+    def _log_revs_md(self, md_l, log_path, hrdb_path):
         self._debug('_log_revs_md %s %s' % (len(md_l), log_path))
         if os.path.isfile(log_path):
             os.remove(log_path)
         make_sure_path_exists(os.path.dirname(log_path))
+        hrdb = pickledb.load(hrdb_path, 'False')
         with open(os.path.expanduser(log_path), "wb") as logf:
             for md in md_l:
                 logf.write('%s%s%s%s%s%s%s\n' % (md.rev, OXITSEP1,
                                              md.server_modified,
                                              OXITSEP1, md.size,
                                              OXITSEP1, md.content_hash,))
-        
+                #xxx check if key already exists??
+                hrdb.set(md.content_hash, md.rev)
+            hrdb.dump()
+            
     @_dbxauth
     def _download_data_one_rev(self, rev, src):
         dest = self.repo
@@ -185,19 +187,11 @@ class Oxit():
     def _get_pname_repo_base(self):
         return self.repo
 
-    def _hash2rev(self, path, hash):
-        self._debug('_hash2rev: %s, %s' % (len(hash), hash[:8]))
-        logs = self._get_log(path)
-        if logs == None:
-            return None
-        for l in logs:
-            (rev, date, size, content_hash) = l.split(OXITSEP1)
-            content_hash = content_hash.strip()
-            #self._debug('_hash2rev: %s, %d, %s' % (rev, len(content_hash), content_hash[:8]))
-            if hash == content_hash:
-                return rev
-        return None
-        
+    def _hash2rev(self, filepath, hash):
+        hrdb = pickledb.load(self._get_pname_hrdbpath(filepath),
+                             'False')
+        return hrdb.get(hash)
+    
     def _head2rev(self, path, rev):
         if rev == 'head':
             logs = self._get_log(path)
@@ -221,7 +215,12 @@ class Oxit():
         return pn_revdir + '/' + rev
 
     def _get_pname_logpath(self, path):
+        # one per file
         return self._get_pname_home_revsdir(path) + '/' + 'log'
+
+    def _get_pname_hrdbpath(self, path):
+        # one per file
+        return self._get_pname_home_revsdir(path) + '/' + HASHREVDB
 
     #xxx
     def OLD_get_pname_mmpath(self):
@@ -396,7 +395,9 @@ class Oxit():
               nrevs, end='')
         md_l = self._get_revs_md(filepath, nrevs)
         print(' done')
-        self._log_revs_md(md_l, self._get_pname_logpath(filepath))
+        self._log_revs_md(md_l,
+                          self._get_pname_logpath(filepath),
+                          self._get_pname_hrdbpath(filepath))
         print('Downloading data of 2 latest revisions ...', end='')
         self._download_data_one_rev(md_l[0].rev, filepath)
         self._download_data_one_rev(md_l[1].rev, filepath)
@@ -411,7 +412,7 @@ class Oxit():
             anchash = ancdb.get(filepath.strip('/'))
             if anchash == None:
                 sys.exit('Error: clone anchash==None')
-            rev = self._hash2rev(filepath.strip('/'), anchash)
+            rev = self._hash2rev(filepath, anchash)
             if rev == None:
                 sys.exit('Error: ancestor not found in local metadata. Try clone with higher nrevs.')
             print('Downloading ancestor data ...', end='')
