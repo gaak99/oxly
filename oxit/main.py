@@ -19,6 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import print_function
 
 from . import __version__
 
@@ -71,7 +72,7 @@ class Oxit():
     """Oxit class -- use the Dropbox API to observ/merge
           diffs of any two Dropbox file revisions
     """
-    def __init__(self, oxit_conf, oxit_repo, debug, orgzly_dir='orgzly'):
+    def __init__(self, oxit_conf, oxit_repo, debug):
         """Initialize Oxit class.
 
         oxit_conf:  user's conf file path
@@ -112,28 +113,28 @@ class Oxit():
             return fn(*args, **kwargs)
         return dbxauth
 
-    @_dbxauth
-    def _download_data(self, md_l, src, dest, nrevs):
-        #xxx can prolly download these concurrently w/mp
-        log_path = self._get_pname_logpath(src)
+    def _log_revs_md(self, md_l, log_path):
+        self._debug('_log_revs_md %s %s' % (len(md_l), log_path))
         if os.path.isfile(log_path):
             os.remove(log_path)
         make_sure_path_exists(os.path.dirname(log_path))
         with open(os.path.expanduser(log_path), "wb") as logf:
             for md in md_l:
-                rev = md.rev
-                dest_data = self._get_pname_by_rev(src, rev)
-                self._debug('_download_data: dest_data %s' % dest_data)
-                self._debug('_download_data: src %s' % src)
-                try:
-                    self.dbx.files_download_to_file(dest_data, src, rev)
-                except Exception as err:
-                    sys.exit('Call to Dropbox to download file data failed: %s'
-                             % err)
-                logf.write('%s%s%s%s%s%s%s\n' % (rev, OXITSEP1,
+                logf.write('%s%s%s%s%s%s%s\n' % (md.rev, OXITSEP1,
                                              md.server_modified,
                                              OXITSEP1, md.size,
                                              OXITSEP1, md.content_hash,))
+        
+    @_dbxauth
+    def _download_data_one_rev(self, rev, src):
+        dest = self.repo
+        self._debug('_download_data_one_rev %s, %s, %s' % (rev, src, dest))
+        dest_data = self._get_pname_by_rev(src, rev)
+        self._debug('_download_one_rev: dest_data %s' % dest_data)
+        try:
+            self.dbx.files_download_to_file(dest_data, src, rev)
+        except Exception as err:
+            sys.exit('Call to Dropbox to download file data failed: %s' % err)
 
     @_dbxauth
     def _download_ancdb(self, ancdb_path):
@@ -158,8 +159,7 @@ class Oxit():
                      % err)
 
     @_dbxauth
-    def _get_revs(self, path, nrevs=10):
-        print("Finding %d latest revisions on Dropbox..." % nrevs)
+    def _get_revs_md(self, path, nrevs=10):
         try:
             revs = sorted(self.dbx.files_list_revisions(path,
                                                         limit=nrevs).entries,
@@ -248,25 +248,6 @@ class Oxit():
 
         return self._get_pname_wt_path(path) + OXITSEP1 + rev
 
-    #todo nukeme
-    def OLD_get_pname_wdrev_ln(self, path, rev):
-        src = self._get_pname_by_rev(path, rev)
-        dest = self._get_pname_by_wdrev(path, rev)
-        if not os.path.isfile(dest):
-            self._debug("_get_pname_wdrev_ln: src/dest hard linkn me maybe")
-            os.system("ln %s %s" % (src, dest))
-        else:
-            isrc = os.stat(src).st_ino
-            idest = os.stat(dest).st_ino
-            self._debug("_get_pname_wdrev_ln: src/dest got dest file now cmp inodes (%d)" % isrc)
-            if isrc != idest:
-                make_sure_path_exists(OLDDIR)
-                os.system("mv %s %s" % (dest, OLDDIR))
-                self._debug("_get_pname_wdrev_ln: post old ln mv, src/dest hard linkn me maybe")
-                os.system("ln %s %s" % (src, dest))
-        return dest
-
-    #todo merge with above _ln()
     def _get_pname_wdrev_ln(self, path, rev, suffix=''):
         """Return linked file path of rev::suffix in wd.
         """
@@ -364,6 +345,19 @@ class Oxit():
         cf.read(path)
         return cf.get('misc', key)
 
+    def _mmdb_populate(self, src_url, nrevs):
+        # Concoct&save orgzly_dir&ancdb path
+        # ancdb per dir or one per tree??? --later
+        orgzly_dir = src_url.split('//')[1].split('/')[0] #top dir only
+        ancdb_path = orgzly_dir + '/' + ANCDBNAME
+
+        # Save meta meta & update master file path list
+        self.mmdb.set('remote_origin', src_url)
+        self.mmdb.set('orgzly_dir', orgzly_dir)
+        self.mmdb.set('ancdb_path', ancdb_path)
+        self.mmdb.set('nrevs', nrevs)
+        self.mmdb.dump()
+
     def clone(self, dry_run, src_url, nrevs, dl_ancdb=True):
         """Given a dropbox url for one file*, fetch the
         n revisions of the file and store locally in repo's
@@ -381,43 +375,48 @@ class Oxit():
         self.init()
 
         # src_url should-not-must be a dropbox url for chrimony sakes
-        file = src_url.lower()  # XXX dbx case insensitive
-        if file.startswith('dropbox://'):
-            file = file[len('dropbox:/'):]  # keep single leading slash
-        if not file.startswith('/') or file.endswith('/'):
+        filepath = src_url.lower()  # XXX dbx case insensitive
+        if filepath.startswith('dropbox://'):
+            filepath = filepath[len('dropbox:/'):]  # keep single leading slash
+        if not filepath.startswith('/') or filepath.endswith('/'):
             sys.exit('error: URL must have leading slash and no trailing slash')
-        self._debug('debug clone: file=%s' % (file))
 
-        # Get all revs' metadata
-        md_l = self._get_revs(file, nrevs)
-        repo_home = self._get_pname_home_base() + file
+        repo_home = self._get_pname_home_base() + filepath
         repo_home_dir = os.path.dirname(os.path.expanduser(repo_home))
         make_sure_path_exists(repo_home_dir)
-
-        # Concoct&save orgzly_dir&ancdb path
-        # ancdb per dir or one per tree??? --later
-        orgzly_dir = src_url.split('//')[1].split('/')[0] #top dir only
-        ancdb_path = orgzly_dir + '/' + ANCDBNAME
-
-        # Save meta meta & update master file path list
-        self.mmdb.set('remote_origin', src_url)
-        self.mmdb.set('orgzly_dir', orgzly_dir)
-        self.mmdb.set('ancdb_path', ancdb_path)
-        self.mmdb.set('nrevs', nrevs)
-        self.mmdb.dump()
-        self._repohome_files_put(file.strip('/'))
+        self._mmdb_populate(src_url, nrevs)
+        self._repohome_files_put(filepath.strip('/'))
 
         # Finally! download the revs data and checkout themz to wt
         self._debug('debug clone: download %d revs of %s to %s' % (nrevs,
-                                                                   file,
+                                                                   filepath,
                                                                    self.repo))
-        self._download_data(md_l, file, self.repo, nrevs)
-        self.checkout(file)
-        print('... cloned into %s.' % self.repo)
+        # Get revs' metadata
+        print("Downloading metadata of %d latest revisions on Dropbox ..." %
+              nrevs, end='')
+        md_l = self._get_revs_md(filepath, nrevs)
+        print(' done')
+        self._log_revs_md(md_l, self._get_pname_logpath(filepath))
+        print('Downloading data of 2 latest revisions ...', end='')
+        self._download_data_one_rev(md_l[0].rev, filepath)
+        self._download_data_one_rev(md_l[1].rev, filepath)
+        print(' done')
+        self.checkout(filepath)
+        #print('... cloned into %s.' % self.repo)
         if dl_ancdb:
-            print('Downloading ancestor db ...')
-            self._download_ancdb(ancdb_path)
-            print('... done')
+            print('Downloading ancestor db ...', end='')
+            self._download_ancdb(self.mmdb.get('ancdb_path'))
+            print(' done')
+            ancdb = self._open_ancdb()
+            anchash = ancdb.get(filepath.strip('/'))
+            if anchash == None:
+                sys.exit('Error: clone anchash==None')
+            rev = self._hash2rev(filepath.strip('/'), anchash)
+            if rev == None:
+                sys.exit('Error: ancestor not found in local metadata. Try clone with higher nrevs.')
+            print('Downloading ancestor data ...', end='')
+            self._download_data_one_rev(rev, filepath)
+            print(' done')
 
     def _add_one_path(self, path):
         # cp file from working tree to index tree dir
@@ -543,6 +542,8 @@ class Oxit():
         return ap, bp
 
     def _diff_one_path(self, diff_cmd, reva, revb,  path):
+        self._pull_me_maybe(reva.lower(), path)
+        self._pull_me_maybe(revb.lower(), path)
         (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), path)
         diff_cmd = diff_cmd if diff_cmd else DEFAULT_DIFF_CMD
         self._debug('debug _diff2_one_path: %s' % diff_cmd)
@@ -573,11 +574,29 @@ class Oxit():
             self._debug('debug diff2 p=%s' % p)
             self._diff_one_path(diff_cmd, reva, revb, p)
 
-    def _cat_one_path(self, cat_cmd, rev, path):
-        fp = self._wd_or_index(rev, path)
-        fp = fp if fp else self._get_pname_by_rev(path, rev)
+    def pull(self, rev, filepath):
+        fp = self._wd_or_index(rev, filepath)
+        fp = fp if fp else self._get_pname_by_rev(filepath, rev)
+        if not os.path.isfile(fp):
+            print('Downloading rev %s data ...' % rev, end='')
+            self._download_data_one_rev(rev, '/'+filepath)
+            print(' done')
+        else:
+            sys.exit('Warning: rev already downloaded')
+
+    def _pull_me_maybe(self, rev, filepath):
+        fp = self._wd_or_index(rev, filepath)
+        fp = fp if fp else self._get_pname_by_rev(filepath, rev)
+        if not os.path.isfile(fp):
+            sys.exit('Warning: rev data is not local. Pls run: oxit pull --rev %s %s'
+                     % (rev, filepath))
+
+    def _cat_one_path(self, cat_cmd, rev, filepath):
+        self._pull_me_maybe(rev.lower(), filepath)
         cat_cmd = cat_cmd if cat_cmd else DEFAULT_CAT_CMD
         self._debug('debug _cat_one_path: %s' % cat_cmd)
+        fp = self._wd_or_index(rev, filepath)
+        fp = fp if fp else self._get_pname_by_rev(filepath, rev)
         try:
             shcmd = cat_cmd % (fp)
         except TypeError:
@@ -607,7 +626,7 @@ class Oxit():
                                self._head2rev(p, rev.lower()),
                                p)
             
-    def _new_ancdb(self):
+    def _open_ancdb(self):
         ancdb_path = self.repo + '/' + self.mmdb.get('ancdb_path')
         if not ancdb_path:
             sys.exit('Error: ancestor db not found. Was oxit clone run?')
@@ -620,7 +639,7 @@ class Oxit():
             fp = filepath
         self._debug('_set_ancdb calc hash of %s' % fp)
         hash = calc_dropbox_content_hash(fp)
-        ancdb = self._new_ancdb()
+        ancdb = self._open_ancdb()
         ancdb.set(filepath, hash)
         ancdb.dump()
         return hash
@@ -630,8 +649,8 @@ class Oxit():
         print('Dropbox file content_hash %s added to ancestor db locally.' % hash[:8])
 
     def ancdb_get(self, filepath):
-        ancdb = self._new_ancdb()
-        print ancdb.get(filepath)
+        ancdb = self._open_ancdb()
+        print('%s' %  ancdb.get(filepath))
 
     def ancdb_push(self):
         self._push_ancestor_db()
@@ -646,8 +665,10 @@ class Oxit():
     def merge3(self, dry_run, merge_cmd, reva, revb, filepath):
         """Run cmd for 3-way merge (aka auto-merge when possible)
         """
+        self._pull_me_maybe(reva.lower(), filepath)
+        self._pull_me_maybe(revb.lower(), filepath)
         (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), filepath)
-        ancdb = self._new_ancdb()
+        ancdb = self._open_ancdb()
         hash = ancdb.get(filepath)
         if hash == None:
             print('Warning hash==None: cant do a 3-way merge as ancestor revision not found.')
@@ -687,7 +708,7 @@ class Oxit():
                 print('Conflicts found. File with completed merges and conflicts is %s' % fcon)
                 return
 
-    def merge3_rc(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+    def merge3_rc(self, dry_run, emacsclient_path, merge_cmd, filepath):
         """If the 3-way diff/merge finished with some conflicts to resolve, run the editor to resolve them"
         """
         tmpf = ('/tmp/tmpoxitmerge_rc.' + str(os.getpid())) #xxx
@@ -718,16 +739,18 @@ class Oxit():
         """
         self.merge3(dry_run, merge_cmd, reva, revb, filepath)
 
-    def merge_rc(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
+    def merge_rc(self, dry_run, emacsclient_path, merge_cmd, filepath):
         """If the 3-way diff/merge finished with some conflicts to resolve, run the editor to resolve them"
         """
-        self.merge3_rc(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
+        self.merge3_rc(dry_run, emacsclient_path, merge_cmd, filepath)
 
     def merge2(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
         """Run merge_cmd to allow user to merge two revs.
 
         merge_cmd format:  program %s %s
         """
+        self._pull_me_maybe(reva.lower(), filepath)
+        self._pull_me_maybe(revb.lower(), filepath)
         qs = lambda(s): '\"' + s + '\"'
         (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), filepath)
         if merge_cmd:
@@ -776,9 +799,9 @@ class Oxit():
         if oneline:
             for l in logs:
                 (rev, date, size, content_hash) = l.split(OXITSEP1)
-                print '%s\t%s\t%s\t%s' % (rev, size.rstrip(),
+                print('%s\t%s\t%s\t%s' % (rev, size.rstrip(),
                                           utc_to_localtz(date),
-                                          content_hash[:8])
+                                          content_hash[:8]))
         else:
             for l in logs:
                 (rev, date, size, content_hash) = l.split(OXITSEP1)
@@ -817,10 +840,10 @@ class Oxit():
         self._debug('debug push one path: %s' % local_path)
         with open(local_path, 'rb') as f:
             print("Uploading staged " + path + " to Dropbox as " +
-                  rem_path + " ...")
+                  rem_path + " ...", end='')
             try:
                 self.dbx.files_upload(f.read(), rem_path, mode=WriteMode('overwrite'))
-                print('... upload complete.')
+                print(' done.')
             except ApiError as err:
                 # This checks for the specific error where a user doesn't have
                 # enough Dropbox space quota to upload this file
@@ -846,10 +869,10 @@ class Oxit():
         rem_path = '/' + ancdb_path
         ancdb_fp = self.repo + '/' + ancdb_path # full path
         with open(ancdb_fp, 'rb') as f:
-            print("Uploading ancestor db " + ancdb_path + " to Dropbox ...")
+            print("Uploading ancestor db " + ancdb_path + " to Dropbox ...", end='')
             try:
                 self.dbx.files_upload(f.read(), rem_path, mode=WriteMode('overwrite'))
-                print('... upload complete.')
+                print(' done.')
             except ApiError as err:
                 # This checks for the specific error where a user doesn't have
                 # enough Dropbox space quota to upload this file

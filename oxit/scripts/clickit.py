@@ -54,7 +54,7 @@ def reset(oxit, filepath):
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--nrevs',
               help='Number of latest file revisions (defaults to 5) to download from Dropbox.',
-              required=False, default=5)
+              required=False, default=10)
 @click.argument('src')
 @click.pass_obj
 def clone(oxit, dry_run, src, nrevs):
@@ -125,14 +125,10 @@ def merge2(oxit, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
 @click.option('--merge-cmd', required=False,
               envvar='MERGE_CMD',
               help='Program to merge two revs, default is ediff via emacsclient, format: prog %s %s')
-@click.option('--reva', required=False, default='HEADMINUS1',
-              help='Defaults to HEADMINUS1 (latest rev-1 in Dropbox), other special keywords are working dir and index.')
-@click.option('--revb', required=False, default='HEAD',
-              help='Defaults to HEAD (latest rev in Dropbox) ... ditto --reva.')
 @click.argument('filepath')
 @click.pass_obj
-def mergerc(oxit, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
-    oxit.merge_rc(dry_run, emacsclient_path, merge_cmd, reva, revb, filepath)
+def mergerc(oxit, dry_run, emacsclient_path, merge_cmd, filepath):
+    oxit.merge_rc(dry_run, emacsclient_path, merge_cmd, filepath)
 
 @cli.command(help='Upload result of locally merged files to Dropbox.')
 @click.option('--dry-run/--no-dry-run', default=False)
@@ -195,6 +191,14 @@ def ancdb_push(oxit):
 @click.pass_obj
 def cat(oxit, cat_cmd, rev, filepath):
     oxit.cat(cat_cmd, rev, filepath)
+
+@cli.command(help='Download the data of a revision.')
+@click.option('--rev', required=True, default='HEAD',
+              help='Default is HEAD (latest rev downloaded from Dropbox).')
+@click.argument('filepath', required=True, default=None)
+@click.pass_obj
+def pull(oxit, rev, filepath):
+    oxit.pull(rev, filepath)
 
 if __name__ == '__main__':
     cli()
