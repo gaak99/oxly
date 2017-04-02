@@ -80,10 +80,12 @@ class Oxit():
         self.home = OXITHOME
         self.conf = oxit_conf
         self.dbx = None
-        # mmdb one per repo
-        self.mmdb_path = self.repo + '/' + OXITHOME + '/.oxit' + OXITSEP1 + OXITMETAMETA
-        self.mmdb = pickledb.load(self.mmdb_path, False)
-        
+        self.mmdb_path_dir = self.repo + '/' + OXITHOME + '/.tmp'
+        #self.mmdb_path_dir = self._get_pname_home_base_tmp()
+        self.mmdb_path = self.mmdb_path_dir + '/oxit' + OXITSEP1 + OXITMETAMETA
+        if os.path.isfile(self.mmdb_path):
+            self.mmdb = pickledb.load(self.mmdb_path, False)
+
     def _debug(self, s):
         if self.debug:
             print(s)  # xxx stderr?
@@ -175,7 +177,7 @@ class Oxit():
     #
 
     def _get_pname_index(self):
-        return self._get_pname_home_base() + '/' + '.oxit'\
+        return self._get_pname_home_base_tmp() + '/' + 'oxit'\
             + OXITSEP1 + OXITINDEX
 
     def _get_pname_index_path(self, path):
@@ -238,8 +240,11 @@ class Oxit():
     def _get_pname_home_base(self):
         return self.repo + '/' + self.home
 
+    def _get_pname_home_base_tmp(self):
+        return self._get_pname_home_base() + '/.tmp'
+    
     def _get_pname_home_paths(self):
-        path = self._get_pname_home_base() + '/.oxit' + OXITSEP1 + 'filepaths'
+        path = self._get_pname_home_base_tmp() + '/oxit' + OXITSEP1 + 'filepaths'
         return os.path.expanduser(path)
 
     def _get_pname_by_wdrev(self, path, rev):
@@ -317,15 +322,16 @@ class Oxit():
             fp_l = self._repohome_files_get()
 
         if not fp_l:
-            sys.exit('internal error: checkout2  repo home empty')
+            sys.exit('internal error: checkout2 repo home empty')
 
         make_sure_path_exists(self._get_pname_index())
         for p in fp_l:
             self._debug('debug checkout2 p=`%s`' % p)
             p_wt, p_ind, p_head = self._get_fp_triple(p)
             if p_wt:
+                #xxx save wt data first?
                 if p_ind:
-                    self._debug('debug checkout2: cp ind wt')
+                    self._debug('debug checkout2: cp index wt')
                     os.system('cp %s %s' % (p_ind, p_wt))
                 elif p_head:
                     self._debug('debug checkout2: cp head wt')
@@ -384,7 +390,9 @@ class Oxit():
         repo_home = self._get_pname_home_base() + filepath
         repo_home_dir = os.path.dirname(os.path.expanduser(repo_home))
         make_sure_path_exists(repo_home_dir)
+
         self._mmdb_populate(src_url, nrevs)
+
         self._repohome_files_put(filepath.strip('/'))
 
         # Finally! download the revs data and checkout themz to wt
@@ -402,12 +410,9 @@ class Oxit():
         print('Checking 2 latest revisions ...')
         self.pull(md_l[0].rev, filepath)
         self.pull(md_l[1].rev, filepath)
-        #print(' done')
         self.checkout(filepath)
-        #print('... cloned into %s.' % self.repo)
         if dl_ancdb:
             print('Checking ancestor db ...', end='')
-            #xxx dl if already local?
             ancdb_path = self.mmdb.get('ancdb_path')
             if os.path.isfile(ancdb_path):
                 print(' already downloaded.')
@@ -586,6 +591,7 @@ class Oxit():
         self._debug('pull: %s, %s' % (rev, filepath))
         fp = self._wd_or_index(rev, filepath)
         fp = fp if fp else self._get_pname_by_rev(filepath, rev)
+        self._debug('pull: fp %s' % (fp))
         if not os.path.isfile(fp):
             filepath = filepath if filepath[0] == '/' else '/'+filepath 
             print('Downloading rev %s data ...' % rev, end='')
@@ -594,7 +600,7 @@ class Oxit():
             self._download_data_one_rev(rev, filepath)
             print(' done.')
         else:
-            print('Rev %s already downloaded.' % rev)
+            print('\tRev %s already downloaded.' % rev)
 
     def _pull_me_maybe(self, rev, filepath):
         fp = self._wd_or_index(rev, filepath)
@@ -794,6 +800,14 @@ class Oxit():
             self._save_repo()
 
         make_sure_path_exists(base_path)
+
+        # mmdb one per repo
+        #self.mmdb_path_dir = self.repo + '/' + OXITHOME + '/.tmp'
+        self.mmdb_path_dir = self._get_pname_home_base_tmp()
+        make_sure_path_exists(self.mmdb_path_dir)
+        self.mmdb_path = self.mmdb_path_dir + '/oxit' + OXITSEP1 + OXITMETAMETA
+        self.mmdb = pickledb.load(self.mmdb_path, False)
+            
         self._debug('debug init: set basic vars in mmdb')
         self.mmdb.set('version', __version__)
         self.mmdb.set('home_version', OXITDIRVERSION)
@@ -963,14 +977,20 @@ class Oxit():
         print("\nPlease select Sync (regular, Forced not neccessary) note on Orgzly now.")
 
     def _save_repo(self):
-        print('Save repo maybe???')
-        # home = self._get_pname_repo_base()
-        # make_sure_path_exists(home + '/' + OLDDIR)
-        # dest = home + '/' + OLDDIR + '/.oxit.' + str(os.getpid())
-        # print('Moving/saving old %s to %s ...'
-        #       % (home + '/.oxit', dest))
-        # os.system('mv %s %s' % (home + '/.oxit', dest))
-
+        # Save current .oxit/.tmp (includes index dir, maybe for recovery?).
+        # This will save/clear repo metmaeta but not per file
+        # revs data/revhashdb/etc which we like to persist between clones.
+        src = self._get_pname_home_base_tmp()
+        if os.path.isdir(src):
+            dest = self._get_pname_home_base() + '/' + OLDDIR + '/oxittmp.' + str(os.getpid())
+            make_sure_path_exists(dest)
+            print('Moving/saving old %s to %s ...'
+                  % (src, dest), end='')
+            os.system('mv %s %s' % (src, dest))
+            print(' done.')
+            if self.mmdb:
+                self.mmdb = None #xxx del?
+                
     def _get_mmval(self, key):
         return self.mmdb.get(key)
 
