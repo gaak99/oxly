@@ -48,6 +48,7 @@ OXITHOME = '.oxit'
 OXITMETAMETA = 'metametadb.json'
 OXITINDEX = 'index'
 OLDDIR = '.old'
+LOGFILENAME = 'log.txt'
 HASHREVDB = 'hashrevdb.json'
 
 # defaults 2-way diff/merge
@@ -219,7 +220,7 @@ class Oxit():
 
     def _get_pname_logpath(self, path):
         # one per file
-        return self._get_pname_home_revsdir(path) + '/' + 'log'
+        return self._get_pname_home_revsdir(path) + '/' + LOGFILENAME
 
     def _get_pname_hrdbpath(self, path):
         # one per file
@@ -423,7 +424,11 @@ class Oxit():
             ancdb = self._open_ancdb()
             anchash = ancdb.get(filepath.strip('/'))
             if anchash == None:
-                sys.exit('Error: clone anchash==None')
+                print('Warning: ancestor hash and rev not found: clone anchash==None')
+                print('Warning: 3-way merge cant be done, maybe try 2-way merge (oxit merge2 --help)')
+                print('Warning: if this is first time you are syncing this file w/oxit then run: oxit ancdb_set --help')
+                print('Warning: See also: oxit ancdb_push --help')
+                sys.exit()
             rev = self._hash2rev(filepath, anchash)
             if rev == None:
                 sys.exit('Error: ancestor not found in local metadata. Try clone with higher nrevs.')
@@ -594,7 +599,7 @@ class Oxit():
         self._debug('pull: fp %s' % (fp))
         if not os.path.isfile(fp):
             filepath = filepath if filepath[0] == '/' else '/'+filepath 
-            print('Downloading rev %s data ...' % rev, end='')
+            print('\tDownloading rev %s data ...' % rev, end='')
             if self.debug:
                 print()
             self._download_data_one_rev(rev, filepath)
@@ -700,10 +705,12 @@ class Oxit():
             sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
         if reva == anc_rev:
             print('Warning: reva %s == anc_rev %s' % (reva, anc_rev))
-            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+            print('Warning: does not like a merge is necessary. Try Sync on Orgzly.')
+            sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
         if revb == anc_rev:
             print('Warning: revb %s == anc_rev %s' % (revb, anc_rev))
-            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+            print('Warning: does not like a merge is necessary. Try Sync on Orgzly.')
+            sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
         f_anc = self._get_pname_wdrev_ln(filepath, anc_rev, suffix=':ANCESTOR')
         mcmd = margs = None
         if merge_cmd:
@@ -733,6 +740,7 @@ class Oxit():
                 fcon = filepath + ':CONFLICT'
                 os.system('mv %s %s' % (fname, fcon))
                 print('Conflicts found. File with completed merges and conflicts is %s' % fcon)
+                print('Pls run: oxit mergerc %s' % filepath)
                 return
 
     def merge3_rc(self, dry_run, emacsclient_path, merge_cmd, filepath):
