@@ -130,7 +130,7 @@ class Oxit():
     @_dbxauth
     def _download_data_one_rev(self, rev, src):
         dest = self.repo
-        self._debug('_download_data_one_rev %s, %s, %s' % (rev, src, dest))
+        self._debug('_download_data_one_rev: %s, %s, %s' % (rev, src, dest))
         dest_data = self._get_pname_by_rev(src, rev)
         self._debug('_download_one_rev: dest_data %s' % dest_data)
         try:
@@ -193,11 +193,12 @@ class Oxit():
         return hrdb.get(hash)
     
     def _head2rev(self, path, rev):
-        if rev == 'head':
+        r = rev.lower()
+        if r == 'head':
             logs = self._get_log(path)
             h = logs[0]
             (rev, date, size, content_hash) = h.split(OXITSEP1)
-        elif rev == 'headminus1':
+        elif r == 'headminus1':
             logs = self._get_log(path)
             if len(logs) == 1:
                 sys.exit('warning: only one rev so far so no headminus1')
@@ -398,16 +399,22 @@ class Oxit():
         self._log_revs_md(md_l,
                           self._get_pname_logpath(filepath),
                           self._get_pname_hrdbpath(filepath))
-        print('Downloading data of 2 latest revisions ...', end='')
-        self._download_data_one_rev(md_l[0].rev, filepath)
-        self._download_data_one_rev(md_l[1].rev, filepath)
-        print(' done')
+        print('Checking 2 latest revisions ...')
+        self.pull(md_l[0].rev, filepath)
+        self.pull(md_l[1].rev, filepath)
+        #print(' done')
         self.checkout(filepath)
         #print('... cloned into %s.' % self.repo)
         if dl_ancdb:
-            print('Downloading ancestor db ...', end='')
-            self._download_ancdb(self.mmdb.get('ancdb_path'))
-            print(' done')
+            print('Checking ancestor db ...', end='')
+            #xxx dl if already local?
+            ancdb_path = self.mmdb.get('ancdb_path')
+            if os.path.isfile(ancdb_path):
+                print(' already downloaded.')
+            else:
+                print('\nDownloading ancestor db ...', end='')
+                self._download_ancdb(ancdb_path)
+                print(' done')
             ancdb = self._open_ancdb()
             anchash = ancdb.get(filepath.strip('/'))
             if anchash == None:
@@ -415,9 +422,9 @@ class Oxit():
             rev = self._hash2rev(filepath, anchash)
             if rev == None:
                 sys.exit('Error: ancestor not found in local metadata. Try clone with higher nrevs.')
-            print('Downloading ancestor data ...', end='')
-            self._download_data_one_rev(rev, filepath)
-            print(' done')
+            print('Checking ancestor rev data ...')
+            self.pull(rev, filepath)
+            #print(' done')
 
     def _add_one_path(self, path):
         # cp file from working tree to index tree dir
@@ -576,14 +583,18 @@ class Oxit():
             self._diff_one_path(diff_cmd, reva, revb, p)
 
     def pull(self, rev, filepath):
+        self._debug('pull: %s, %s' % (rev, filepath))
         fp = self._wd_or_index(rev, filepath)
         fp = fp if fp else self._get_pname_by_rev(filepath, rev)
         if not os.path.isfile(fp):
+            filepath = filepath if filepath[0] == '/' else '/'+filepath 
             print('Downloading rev %s data ...' % rev, end='')
-            self._download_data_one_rev(rev, '/'+filepath)
-            print(' done')
+            if self.debug:
+                print()
+            self._download_data_one_rev(rev, filepath)
+            print(' done.')
         else:
-            sys.exit('Warning: rev already downloaded')
+            print('Rev %s already downloaded.' % rev)
 
     def _pull_me_maybe(self, rev, filepath):
         fp = self._wd_or_index(rev, filepath)
@@ -666,19 +677,28 @@ class Oxit():
     def merge3(self, dry_run, merge_cmd, reva, revb, filepath):
         """Run cmd for 3-way merge (aka auto-merge when possible)
         """
-        self._pull_me_maybe(reva.lower(), filepath)
-        self._pull_me_maybe(revb.lower(), filepath)
-        (fa, fb) = self._get_diff_pair(reva.lower(), revb.lower(), filepath)
+        reva = self._head2rev(filepath, reva)
+        revb = self._head2rev(filepath, revb)
+
+        self._pull_me_maybe(reva, filepath)
+        self._pull_me_maybe(revb, filepath)
+        (fa, fb) = self._get_diff_pair(reva, revb, filepath)
         ancdb = self._open_ancdb()
         hash = ancdb.get(filepath)
         if hash == None:
             print('Warning hash==None: cant do a 3-way merge as ancestor revision not found.')
             sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
-        ancestor_rev = self._hash2rev(filepath, hash)
-        if ancestor_rev == None: #not enough revs downloaded 
+        anc_rev = self._hash2rev(filepath, hash)
+        if anc_rev == None: #not enough revs downloaded 
             print('Warning ancrev==None: cant do a 3-way merge as no ancestor revision found.')
             sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
-        f_ancestor = self._get_pname_wdrev_ln(filepath, ancestor_rev, suffix=':ANCESTOR')
+        if reva == anc_rev:
+            print('Warning: reva %s == anc_rev %s' % (reva, anc_rev))
+            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+        if revb == anc_rev:
+            print('Warning: revb %s == anc_rev %s' % (revb, anc_rev))
+            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+        f_anc = self._get_pname_wdrev_ln(filepath, anc_rev, suffix=':ANCESTOR')
         mcmd = margs = None
         if merge_cmd:
             mc = merge_cmd.split(' ')
@@ -686,7 +706,7 @@ class Oxit():
             margs = mc[1:] if len(mc)>1 else []
         mcmd = [mcmd] if mcmd else [DIFF3_BIN]
         margs = margs if margs else [DIFF3_BIN_ARGS]
-        cmd3 = mcmd + margs + [fa, f_ancestor, fb]
+        cmd3 = mcmd + margs + [fa, f_anc, fb]
         self._debug('debug merge3: cmd3=%s' % cmd3)
         if dry_run:
             print('merge3 dry-run: %s' % cmd3)
@@ -943,12 +963,13 @@ class Oxit():
         print("\nPlease select Sync (regular, Forced not neccessary) note on Orgzly now.")
 
     def _save_repo(self):
-        home = self._get_pname_repo_base()
-        make_sure_path_exists(home + '/' + OLDDIR)
-        dest = home + '/' + OLDDIR + '/.oxit.' + str(os.getpid())
-        print('Moving/saving old %s to %s ...'
-              % (home + '/.oxit', dest))
-        os.system('mv %s %s' % (home + '/.oxit', dest))
+        print('Save repo maybe???')
+        # home = self._get_pname_repo_base()
+        # make_sure_path_exists(home + '/' + OLDDIR)
+        # dest = home + '/' + OLDDIR + '/.oxit.' + str(os.getpid())
+        # print('Moving/saving old %s to %s ...'
+        #       % (home + '/.oxit', dest))
+        # os.system('mv %s %s' % (home + '/.oxit', dest))
 
     def _get_mmval(self, key):
         return self.mmdb.get(key)
