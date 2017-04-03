@@ -419,9 +419,12 @@ class Oxit():
         self._log_revs_md(md_l,
                           self._get_pname_logpath(filepath),
                           self._get_pname_hrdbpath(filepath))
-        print('Checking 2 latest revisions ...')
+        print('Checking 2 latest revisions in Dropbox...')
         self.pull(md_l[0].rev, filepath)
-        self.pull(md_l[1].rev, filepath)
+        if len(md_l) > 1:
+            self.pull(md_l[1].rev, filepath)
+        else:
+            print('\tonly one revision found.')
         self.checkout(filepath)
         if dl_ancdb:
             print('Checking ancestor db ...', end='')
@@ -437,8 +440,8 @@ class Oxit():
             if anchash == None:
                 print('Warning: ancestor hash and rev not found: clone anchash==None')
                 print('Warning: 3-way merge cant be done, maybe try 2-way merge (oxit merge2 --help)')
-                print('Warning: if this is first time you are syncing this file w/oxit then run: oxit ancdb_set --help')
-                print('Warning: See also: oxit ancdb_push --help')
+                print('Warning: to init the ancdb for this file then run: oxit ancdb_set %s' % filepath.strip('/'))
+                print('Warning: then run: oxit ancdb_push')
                 sys.exit()
             rev = self._hash2rev(filepath, anchash)
             if rev == None:
@@ -610,13 +613,13 @@ class Oxit():
         self._debug('pull: fp %s' % (fp))
         if not os.path.isfile(fp):
             filepath = filepath if filepath[0] == '/' else '/'+filepath 
-            print('\tDownloading rev %s data ...' % rev, end='')
+            print('\tdownloading rev %s data ...' % rev, end='')
             if self.debug:
                 print()
             self._download_data_one_rev(rev, filepath)
             print(' done.')
         else:
-            print('\tRev %s already downloaded.' % rev)
+            print('\trevision %s already downloaded.' % rev)
 
     def _pull_me_maybe(self, rev, filepath):
         fp = self._wd_or_index(rev, filepath)
@@ -716,11 +719,11 @@ class Oxit():
             sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
         if reva == anc_rev:
             print('Warning: reva %s == anc_rev %s' % (reva, anc_rev))
-            print('Warning: does not like a merge is necessary. Try Sync on Orgzly.')
+            print('Warning: does not look like a merge is necessary. Try Sync on Orgzly.')
             sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
         if revb == anc_rev:
             print('Warning: revb %s == anc_rev %s' % (revb, anc_rev))
-            print('Warning: does not like a merge is necessary. Try Sync on Orgzly.')
+            print('Warning: does not look like a merge is necessary. Try Sync on Orgzly.')
             sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
         f_anc = self._get_pname_wdrev_ln(filepath, anc_rev, suffix=':ANCESTOR')
         mcmd = margs = None

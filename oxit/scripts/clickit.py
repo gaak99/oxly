@@ -78,7 +78,7 @@ def diff(oxit, diff_cmd, reva, revb, filepath):
 def init(oxit):
     oxit.init()
 
-@cli.command(help='Display meta data of revisions downloaded from Dropbox, oneline format: rev-string file-size (bytes) date-modded')
+@cli.command(help='Display meta data of revisions downloaded from Dropbox, oneline format: rev-string file-size (bytes) date-modded Dropbox-content-hash (first 8 chars)')
 @click.option('--oneline/--no-oneline', required=False, default=False,
               help='One line per revision.')
 @click.argument('filepath', required=True, default=None)
