@@ -114,6 +114,17 @@ class Oxit():
             return fn(*args, **kwargs)
         return dbxauth
 
+    def _dbxmd_get_hash(self, filepath):
+        md_l = self._get_revs_md(filepath, 1)
+        return md_l[0].content_hash
+
+    def _dbx_feq(self, filepath):
+        lhash = calc_dropbox_content_hash(filepath)
+        rhash = self._dbxmd_get_hash('/'+filepath)
+        if lhash == rhash:
+            return True
+        return False
+    
     def _log_revs_md(self, md_l, log_path, hrdb_path):
         self._debug('_log_revs_md %s %s' % (len(md_l), log_path))
         if os.path.isfile(log_path):
@@ -415,12 +426,12 @@ class Oxit():
         if dl_ancdb:
             print('Checking ancestor db ...', end='')
             ancdb_path = self.mmdb.get('ancdb_path')
-            if os.path.isfile(ancdb_path):
+            if os.path.isfile(ancdb_path) and self._dbx_feq(ancdb_path):
                 print(' already downloaded.')
             else:
-                print('\nDownloading ancestor db ...', end='')
+                print('\n\tDownloading ancestor db ...', end='')
                 self._download_ancdb(ancdb_path)
-                print(' done')
+                print(' done.')
             ancdb = self._open_ancdb()
             anchash = ancdb.get(filepath.strip('/'))
             if anchash == None:
