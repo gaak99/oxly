@@ -100,9 +100,11 @@ class Oxit():
             self.dbx.users_get_current_account()
             self._debug('debug push auth ok')
         except AuthError as err:
-            sys.exit("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
+            print("ERROR: Invalid access token; try re-generating an access token from the app console on the web.")
+            sys.exit(1)
         except Exception as e:
-            sys.exit("ERROR: push call to Dropbox fail: %s" % e)
+            print("ERROR: push call to Dropbox fail: %s" % e)
+            sys.exit(1)
 
     def _dbxauth(fn):
         @wraps(fn)
@@ -150,7 +152,8 @@ class Oxit():
         try:
             self.dbx.files_download_to_file(dest_data, src, rev)
         except Exception as err:
-            sys.exit('Call to Dropbox to download file data failed: %s' % err)
+            print('Call to Dropbox to download file data failed: %s' % err)
+            sys.exit(1)
 
     @_dbxauth
     def _download_ancdb(self, ancdb_path):
@@ -166,14 +169,16 @@ class Oxit():
                 print('Warning: 3-way merge cant be done, try 2-way merge (see also: oxit merge2 --help)')
                 print('Warning: See also: oxit ancdb_set --help')
                 print('Warning: See also: oxit ancdb_push --help')
-                sys.exit()
+                sys.exit(1)
             else:
-                sys.exit('Call to Dropbox to download ancestor db data failed: %s'
+                print('Call to Dropbox to download ancestor db data failed: %s'
                          % err)
+                sys.exit(1)
         except Exception as err:
-            sys.exit('Call to Dropbox to download ancestor db data failed: %s'
+            print('Call to Dropbox to download ancestor db data failed: %s'
                      % err)
-
+            sys.exit(1)
+            
     @_dbxauth
     def _get_revs_md(self, path, nrevs=10):
         try:
@@ -334,8 +339,9 @@ class Oxit():
             fp_l = self._repohome_files_get()
 
         if not fp_l:
-            sys.exit('internal error: checkout2 repo home empty')
-
+            print('internal error: checkout2 repo home empty')
+            sys.exit(1)
+    
         make_sure_path_exists(self._get_pname_index())
         for p in fp_l:
             self._debug('debug checkout2 p=`%s`' % p)
@@ -388,7 +394,7 @@ class Oxit():
         if dry_run:
             print('clone dry-run: remote repo = %s' % src_url)
             print('clone dry-run: local repo = %s' % self.repo)
-            return
+            sys.exit(0)
 
         self.init()
 
@@ -397,7 +403,8 @@ class Oxit():
         if filepath.startswith('dropbox://'):
             filepath = filepath[len('dropbox:/'):]  # keep single leading slash
         if not filepath.startswith('/') or filepath.endswith('/'):
-            sys.exit('error: URL must have leading slash and no trailing slash')
+            print('error: URL must have leading slash and no trailing slash')
+            sys.exit(1)
 
         repo_home = self._get_pname_home_base() + filepath
         repo_home_dir = os.path.dirname(os.path.expanduser(repo_home))
@@ -442,13 +449,13 @@ class Oxit():
                 print('Warning: 3-way merge cant be done, maybe try 2-way merge (oxit merge2 --help)')
                 print('Warning: to init the ancdb for this file then run: oxit ancdb_set %s' % filepath.strip('/'))
                 print('Warning: then run: oxit ancdb_push')
-                sys.exit()
+                sys.exit(1)
             rev = self._hash2rev(filepath, anchash)
             if rev == None:
-                sys.exit('Error: ancestor not found in local metadata. Try clone with higher nrevs.')
+                print('Error: ancestor not found in local metadata. Try clone with higher nrevs.')
+                sys.exit(1)
             print('Checking ancestor rev data ...')
             self.pull(rev, filepath)
-            #print(' done')
 
     def _add_one_path(self, path):
         # cp file from working tree to index tree dir
@@ -511,7 +518,8 @@ class Oxit():
 
         ifp_l = self._scrub_fnames(fp_l)
         if not ifp_l:
-            sys.exit('warning: internal err status: wt paths empty')
+            print('warning: internal err status: wt paths empty')
+            sys.exit(1)
 
         self._debug('debug status2 %s' % ifp_l)
         # changes staged but not pushed
@@ -666,7 +674,8 @@ class Oxit():
     def _open_ancdb(self):
         ancdb_path = self.repo + '/' + self.mmdb.get('ancdb_path')
         if not ancdb_path:
-            sys.exit('Error: ancestor db not found. Was oxit clone run?')
+            print('Error: ancestor db not found. Was oxit clone run?')
+            sys.exit(1)
         return pickledb.load(ancdb_path, 'False')
 
     def _set_ancdb(self, filepath):
@@ -717,6 +726,8 @@ class Oxit():
         if anc_rev == None: #not enough revs downloaded 
             print('Warning ancrev==None: cant do a 3-way merge as no ancestor revision found.')
             sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+            sys.exit(1)
+
         if reva == anc_rev:
             print('Warning: reva %s == anc_rev %s' % (reva, anc_rev))
             print('Warning: does not look like a merge is necessary. Try Sync on Orgzly.')
@@ -725,6 +736,7 @@ class Oxit():
             print('Warning: revb %s == anc_rev %s' % (revb, anc_rev))
             print('Warning: does not look like a merge is necessary. Try Sync on Orgzly.')
             sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
+            sys.exit(1)
         f_anc = self._get_pname_wdrev_ln(filepath, anc_rev, suffix=':ANCESTOR')
         mcmd = margs = None
         if merge_cmd:
@@ -743,20 +755,20 @@ class Oxit():
             rt = sp.call(cmd3, stdout=fout)
             self._debug('debug merge3: rt=%d, fname=%s' % (rt, fname))
             if dry_run:
-                sys.exit('merge3 dry-run: %s exit value=%d' % (cmd3[0], rt))
+                print('merge3 dry-run: %s exit value=%d' % (cmd3[0], rt))
+                sys.exit(rt)
             if rt > 1:
-                sys.exit('Error: diff3 returned %d' % rt)
+                print('Error: diff3 returned %d' % rt)
             if rt == 0:
                 os.system('mv %s %s' % (fname, filepath))
                 print('No conflicts found. File fully merged locally in %s'  % filepath)
-                return
             if rt == 1:
                 fcon = filepath + ':CONFLICT'
                 os.system('mv %s %s' % (fname, fcon))
                 print('Conflicts found. File with completed merges and conflicts is %s' % fcon)
                 print('Pls run: oxit mergerc %s' % filepath)
-                return
-
+            sys.exit(rt)
+            
     def merge3_rc(self, dry_run, emacsclient_path, merge_cmd, filepath):
         """If the 3-way diff/merge finished with some conflicts to resolve, run the editor to resolve them"
         """
@@ -922,7 +934,8 @@ class Oxit():
     def _push_ancestor_db(self):
         ancdb_path = self.mmdb.get('ancdb_path')  # *ass*ume relative to repo
         if not ancdb_path:
-            sys.exit('Error: ancestor db not found. Was oxit clone run?')
+            print('Error: ancestor db not found. Was oxit clone run?')
+            sys.exit(1)
         rem_path = '/' + ancdb_path
         ancdb_fp = self.repo + '/' + ancdb_path # full path
         with open(ancdb_fp, 'rb') as f:
@@ -935,13 +948,14 @@ class Oxit():
                 # enough Dropbox space quota to upload this file
                 if (err.error.is_path() and
                         err.error.get_path().error.is_insufficient_space()):
-                    sys.exit("ERROR: Cannot back up; insufficient space.")
+                    print("ERROR: Cannot upload; insufficient space.")
+                    sys.exit(1)
                 elif err.user_message_text:
                     print(err.user_message_text)
-                    sys.exit(100)
+                    sys.exit(1)
                 else:
                     print(err)
-                    sys.exit(101)
+                    sys.exit(1)
         
     def _get_index_paths(self):
         index_dir = self._get_pname_index()
