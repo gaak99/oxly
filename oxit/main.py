@@ -1008,7 +1008,7 @@ class Oxit():
         if dropbox_url and post_push_clone:
             nrevs = self._get_mmval('nrevs')
             self._save_repo()
-            print('Re-cloning to get current meta data/data from Dropbox...')
+            print('Re-cloning to get current metadata/data from Dropbox...')
             self.clone(dry_run, dropbox_url, nrevs, dl_ancdb=False)
         print("\nPlease select Sync (regular, Forced not neccessary) note on Orgzly now.")
 

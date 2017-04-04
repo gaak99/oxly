@@ -134,7 +134,7 @@ def mergerc(oxit, dry_run, emacsclient_path, merge_cmd, filepath):
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--post-push-clone/--no-post-push-clone',
               help='After success on push, (no) resync w/Dropbox.)',
-              default=True)
+              default=False)
 @click.argument('filepath', required=False, default=None)
 @click.pass_obj
 def push(oxit, dry_run, post_push_clone, filepath):
