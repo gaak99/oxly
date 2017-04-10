@@ -447,8 +447,8 @@ class Oxit():
             if anchash == None:
                 print('Warning: ancestor hash and rev not found: clone anchash==None')
                 print('Warning: 3-way merge cant be done, maybe try 2-way merge (oxit merge2 --help)')
-                print('Warning: to init the ancdb for this file then run: oxit ancdb_set %s' % filepath.strip('/'))
-                print('Warning: then run: oxit ancdb_push')
+                print('Warning: to init the ancdb for this file run; oxit ancdb_set %s' % filepath.strip('/'))
+                print('Warning: then run; oxit ancdb_push')
                 sys.exit(1)
             rev = self._hash2rev(filepath, anchash)
             if rev == None:
@@ -734,7 +734,7 @@ class Oxit():
             sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
         if revb == anc_rev:
             print('Warning: revb %s == anc_rev %s' % (revb, anc_rev))
-            print('Warning: does not look like a merge is necessary. Try Sync on Orgzly.')
+            print('Warning: does not look like a merge is necessary, try Sync on Orgzly.')
             sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
             sys.exit(1)
         f_anc = self._get_pname_wdrev_ln(filepath, anc_rev, suffix=':ANCESTOR')
