@@ -61,6 +61,9 @@ DEFAULT_DIFF_CMD = 'diff %s %s'
 DEFAULT_CAT_CMD = 'cat %s'
 
 # defaults 3-way diff/merge
+MERGE3_EVALFUNC = "ediff-merge-with-ancestor"
+DEFAULT_MERGE3RC_CMD = MERGE_BIN + ' ' + MERGE_EVAL + ' \'('\
+                    + MERGE3_EVALFUNC + ' %s %s %s' + ')\''
 DEFAULT_EDIT_CMD = 'emacsclient %s'
 DIFF3_BIN = 'diff3'
 DIFF3_BIN_ARGS = '-m'
@@ -765,45 +768,66 @@ class Oxit():
             if rt == 1:
                 fcon = filepath + ':CONFLICT'
                 os.system('mv %s %s' % (fname, fcon))
-                print('Conflicts found. File with completed merges and conflicts is %s' % fcon)
-                print('Pls run: oxit mergerc %s' % filepath)
+                print('Conflicts found, pls run either ...')
+                print('\tedit diff3 output: $EDITOR %s' % (fcon))
+                print('\tediff 3-way merge: oxit mergerc --reva %s --revb %s %s' % (reva, revb, filepath))
             sys.exit(rt)
             
-    def merge3_rc(self, dry_run, emacsclient_path, merge_cmd, filepath):
-        """If the 3-way diff/merge finished with some conflicts to resolve, run the editor to resolve them"
+    def merge3_rc(self, dry_run, emacsclient_path, mergerc_cmd, reva, revb, filepath):
+        """Run mergerc_cmd to allow user to merge 3 revs.
+
+        merge_cmd format:  program %s %s
         """
-        tmpf = ('/tmp/tmpoxitmerge_rc.' + str(os.getpid())) #xxx
-        fcon = filepath + ':CONFLICT'
-        if not os.path.isfile(fcon):
-            sys.exit('Error: no conflict file found. Try re-running merge cmd.')
-        os.system('cp %s %s' % (fcon, tmpf))
-        if emacsclient_path:
-            m_cmd = emacsclient_path + '/' + DEFAULT_EDIT_CMD
-            shcmd = m_cmd % (tmpf)
-        else: #xxx $EDITOR
-            shcmd = DEFAULT_EDIT_CMD % (tmpf)
+        reva = self._head2rev(filepath, reva)
+        revb = self._head2rev(filepath, revb)
+        self._pull_me_maybe(reva, filepath)
+        self._pull_me_maybe(revb, filepath)
+        (fa, fb) = self._get_diff_pair(reva, revb, filepath)
+        ancdb = self._open_ancdb()
+        hash = ancdb.get(filepath)
+        if hash == None:
+            print('Warning hash==None: cant do a 3-way merge as ancestor revision not found.')
+            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+        anc_rev = self._hash2rev(filepath, hash)
+        if anc_rev == None: #not enough revs downloaded 
+            print('Warning ancrev==None: cant do a 3-way merge as no ancestor revision found.')
+            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+            sys.exit(1)
+
+        if reva == anc_rev:
+            print('Warning: reva %s == anc_rev %s' % (reva, anc_rev))
+            print('Warning: does not look like a merge is necessary. Try Sync on Orgzly.')
+            sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
+        if revb == anc_rev:
+            print('Warning: revb %s == anc_rev %s' % (revb, anc_rev))
+            print('Warning: does not look like a merge is necessary, try Sync on Orgzly.')
+            sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
+            sys.exit(1)
+        f_anc = self._get_pname_wdrev_ln(filepath, anc_rev, suffix=':ANCESTOR')
+        qs = lambda(s): '\"' + s + '\"'
+        (fa, fb) = self._get_diff_pair(reva, revb, filepath)
+        if mergerc_cmd:
+            shcmd = mergerc_cmd % (qs(fa), qs(fb), qs(f_anc))  # quotes cant hurt, eh?
+        elif emacsclient_path:
+            m_cmd = emacsclient_path + '/' + DEFAULT_MERGE3RC_CMD
+            shcmd = m_cmd % (qs(fa), qs(fb), qs(f_anc))
+        else:
+            shcmd = DEFAULT_MERGE3RC_CMD % (qs(fa), qs(fb), qs(f_anc))
+        self._debug('debug mergerc: %s' % shcmd)
         if dry_run:
-            print('merge_rc dry-run: %s' % shcmd)
+            print('mergerc dry-run: %s' % shcmd)
             return
-        self._debug('debug merge_rc: shcmd=%s' % shcmd)
-        # end emacs/client session: C-x #
         os.system(shcmd)
-        #xxx check if no changes before mv???
-        dest = filepath + ':POSTEDIT'
-        os.system('mv %s %s' % (tmpf, dest))
-        print('The post-edit file is %s' % dest)
-        print('If the file is ready to push to Dropbox: mv %s %s' %
-              (dest, filepath))
         
-    def merge(self, dry_run,merge_cmd, reva, revb, filepath):
+    def merge(self, dry_run, merge_cmd, reva, revb, filepath):
         """Run cmd for 3-way merge (aka auto-merge when possible)
         """
         self.merge3(dry_run, merge_cmd, reva, revb, filepath)
 
-    def merge_rc(self, dry_run, emacsclient_path, merge_cmd, filepath):
+    def merge_rc(self, dry_run, emacsclient_path, mergerc_cmd, reva, revb, filepath):
         """If the 3-way diff/merge finished with some conflicts to resolve, run the editor to resolve them"
         """
-        self.merge3_rc(dry_run, emacsclient_path, merge_cmd, filepath)
+        self.merge3_rc(dry_run, emacsclient_path, mergerc_cmd, reva, revb, filepath)
 
     def merge2(self, dry_run, emacsclient_path, merge_cmd, reva, revb, filepath):
         """Run merge_cmd to allow user to merge two revs.
