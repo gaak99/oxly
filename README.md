@@ -1,20 +1,18 @@
-#Intro
+# Intro
 oxit uses the Dropbox API to view/merge diffs of any two Dropbox file revisions with a git-like cli/flow.
 
-So you can edit/save the same file simultaneously on multiple clients (e.g. Emacs/laptop, Orgzly/Android) and then later run oxit (on laptop) to view the diffs, merge last two (usually) revisions (and resolve-conflicts if necessary), and push merged file to Dropbox.
+So you can edit/save the same file simultaneously on multiple clients (e.g. Emacs/laptop, Orgzly/Android) and then later run oxit (on laptop) to view the diffs, auto-merge last two (usually) revisions (and resolve-conflicts if necessary), and push merged file to Dropbox.
 
-The merge cmd is user setable and defaults to the emacs/client ediff cmd.
+The `merge` cmd uses diff3 and will try to auto-merge. If it can't auto-merge all chunks the conflicts can be resolved by hand (default is emacs ediff).
 
-##Status
-Brand new as of late Oct 2016.
-
-You may want to try master HEAD before fetching a release.
-
+## Status
 Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxit/issues).
+
+You probbly want to try master HEAD before fetching a release.
 
 oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision, so it's pretty low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want using the Dropbox.com site.
 
-##Backstory
+## Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
 And Dropbox will save them for 1 month (free) or 1 year (paid).
 And as a long time casual Dropbox user this was news to me recently.
@@ -23,20 +21,42 @@ And my fave org-mode mobile app Orgzly supports Dropbox but not git(1) yet so I 
 
 And if you squint hard enough Dropbox's auto-versioning looks like lightweight commits and maybe we can simulate a (limited) DVCS here enough to be useful.
 
-#Usage
+
+## Theory of operation
+On Dropbox we keep a small/simple filename=content_hash kv db called the ancdb.
+
+The content_hash is the official Dropbox one.
+
+Changes to the file can be saved (~/Dropbox) on laptop and mobile locally (Orgzly) as needed at the same time.
+
+When ready to merge, do a "final" save to Dropbox on laptop and (Force) save to Dropbox on Orgzly.
+
+oxit `merge` then can do:
+	```pseudocode
+	fa = dropbox latest_rev
+	fb = dropbox latest_rev-1
+	fanc = ancdb_get()
+	diff3 fa fanc fb
+	```
+
+If all diffs not successfully automajically merged, the user can resolve conflicts by hand.
+
+# Usage
 ```bash
 $ oxit --help
 
 $ oxit sub-cmd --help
 ```
 
-##Quick start
-###One time
+## Quick start
+### One time
 * Install
 
 ```bash
 git clone https://github.com/gaak99/oxit.git
-cd oxit && sudo python setup.py install 
+cd oxit && sudo python setup.py install
+export MYBIN=$HOME/bin # set for your env
+cp oxit/scripts/oxmerge.sh $MYBIN/oxmerge && chmod 755 $MYBIN/oxmerge
 ```
 * Dropbox API app and OAuth 2 token
 
@@ -51,10 +71,25 @@ And add it to ~/.oxitconfig. Note no quotes needed around $token.
 auth_token=$token
 ```
 
-###As needed (dailyish)
+### One time per file
+1. Make sure Orgzly has a clean sync of file.
+
+2. Run oxit cmds to init file in the ancestor db on laptop something like this:
+ 
+	```bash
+	$ mkdir /tmp/myoxitrepo ;  cd /tmp/myoxitrepo 
+
+	$ oxit clone dropbox://orgzly/foo.txt
+	
+	$ oxit ancdb_set dropbox://orgzly/foo.txt
+
+	$ oxit ancdb_push
+	```
+
+### As needed (dailyish)
 #### Save same file/note on Dropbox clients
 1. Save file shared via Dropbox on laptop (~/Dropbox) as needed.
-   When you want to sync/merge with Orgzly don't save any more revisions on laptop until the oxit push is completed.
+   When you want to sync/merge with Orgzly version don't save any more revisions on laptop until the oxit push is completed.
    It's not terrible if you do -- no data loss -- but you may have to redo the oxit procedure below.
 
 2. With Orgzly save (locally) the same note.
@@ -65,68 +100,40 @@ auth_token=$token
 
    The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
 
-####Merge revisions
+#### Merge revisions
 Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are ready to be viewed/merged with oxit:
 
-1. Run oxit cmds on laptop something like this:
+1. Run oxit cmds via oxmerge script on laptop something like this:
 
 	```bash
-	$ mkdir /tmp/myoxitrepo && cd /tmp/myoxitrepo 
+	$ cd /tmp/myoxitrepo 
 
-	$ oxit clone dropbox://orgzly/foo.txt
-
-	(optional) $ oxit log orgzly/foo.txt
-
-	(optional) $ oxit diff orgzly/foo.txt # diff(1) last two revisions
-
-	(optional) $ oxit merge --dry-run orgzly/foo.txt
-
-	$ oxit merge --no-dry-run orgzly/foo.txt # merge last two revisions (with emacs ediff)
-
-	(via ediff save merged emacs buf to orgzly/foo.txt)
-
-	(optional) $ oxit status orgzly/foo.txt
-
-	$ oxit add orgzly/foo.txt # add merged file to staging area
-
-	(optional) $ oxit status orgzly/foo.txt
-
-	(optional) $ oxit diff --reva HEAD --revb index orgzly/foo.txt # diff(1) last Dropbox revision and staged version
-
-	(optional) $ oxit push --dry-run orgzly/foo.txt
-
-	$ oxit push --no-dry-run orgzly/foo.txt # upload merged file to Dropbox
+	$ oxmerge dropbox://orgzly/foo.txt
 	```
 
-####Finish with Orgzly sync
-1. Finally on Orgzly `Sync` (`Force Load` sync not necessary) to load merged/latest revision from Dropbox.
+2a. If oxmerge finished with no conflicts -- *YAAAY* -- goto step 3 below.
 
+2b. If oxmerge finished with conflicts -- *BOOOO* -- choose one of the options given to resolve the conflict(s).
 
-###Tips/Tricks/Caveats/Gotchas
+3. Finally on Orgzly `Sync` (`Force Load` sync not necessary) to load merged/latest revision from Dropbox.
 
-####Design
+Congrats your file is merged.
+
+### Tips/Tricks/Caveats/Gotchas
+
+#### Design
 * oxit is not git -- Def not git as no real commits, no branches, single user, etc. But as far as a poor-man's DVCS goes, oxit can be useful when git is not avail. Oxit just implements enough of a subset of git to support a basic clone-merge-add-push flow (and a few others to view the revisions and merged file). New files in wd/index not supported.
 
-* My use case is laptop and Android Orgzly so far only only that config has much real world use. More clients should be viable as long as two at a time are merged/pushed in a careful manner (don't save any non-oxit changes to Dropbox while this is being done). There's no locking done here so the user has to be careful and follow the procedure above.
-
+* My use case is Emacs on a Unix laptop and Android Orgzly on mobile phone so far only only that config has much real world use. More clients should be viable as long as two at a time are merged/pushed in a careful manner (don't save any non-oxit changes to Dropbox while this is being done). There's no locking done here so the user has to be careful and follow the procedure above.
 
 * Only handles a single file on Dropbox as remote repo (might be expanded to a dir tree in future). 
 
-* The merge is done by hand which is not as nice as automated merge but at least you have full control over merged file and conflicts must be resolved by hand in any model (_citation needed_) anyways.
-(It's not automated cuz it's a two-way merge cuz not a real VCS as no common ancestor can be identified for three-way merge).
+#### Using oxit
 
-####Using oxit
+##### oxit cmds log, diff, and cat are handy to view revisions
 
-#####Developed/tested on MacOS and Linux so non-Unix-like systems may be trouble
-
-#####Running merge-cmd
-* Use the ```merge --dry-run``` opt to see merge-cmd that will be run.
-By default it's ediff via emacsclient so the usual gotchas apply here -- in emacs run ```server-start```.
-* If you are like me and have several versions of emacs installed and emacsclient can't connect, try setting  ```merge --emacsclient-path``` (or sh ```$EMACSCLIENT_PATH```).
-
-####Using ediff
+#### Using ediff
 * ediff skillz def a plus here. But if not currently avail then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- Emacs app.
-* Typically in ediff you'll choose buffer A or buffer B for each change chunk, but for this type of merge (2 way) sometimes (appended chunks in A&B for example) you may want both and thus you may need to hand edit the merge buffer (better way?).
 * Orgzly seems to add blank line(s) so don't ediff merge them out on Emacs else u will keep seeing them come back -- zombielike --  to haunt you and must re-merge again and again.
 * BTW if you don't dig your ediff config try mines (that I found on the Net)
 
@@ -142,7 +149,9 @@ By default it's ediff via emacsclient so the usual gotchas apply here -- in emac
 (add-hook 'ediff-prepare-buffer-hook #'show-all)
 ```
 
-#Tests
+##### Developed/tested on MacOS and Linux so non-Unix-like systems may be trouble
+
+# Tests
 
 ```bash
 export PYTHONPATH=/tmp/pypath
@@ -152,16 +161,16 @@ mkdir /tmp/pypath && python setup.py develop --install-dir /tmp/pypath
 PATH=/tmp/pypath:$PATH bash oxit/tests/run-tests.sh
 ```
 
-#Legalese
-##License
+# Legalese
+## License
 
 MIT.  See LICENSE file for full text.
 
-##Warranty
+## Warranty
  
 None.
 
-##Copyright
+## Copyright
 Copyright (c) 2016 Glenn Barry (gmail: gaak99)
 
 #Refs
@@ -173,18 +182,18 @@ Copyright (c) 2016 Glenn Barry (gmail: gaak99)
 
 <https://cloudrail.com/compare-consistency-models-of-cloud-storage-services/>
 
-#Props
+# Props
 The hackers behind Dropbox, Orgzly, emacs/org-mode/ediff, Python/Click, git/github/git-remote-dropbox, and others I'm probably forgetting.
   
-#Future work
+# Future work
 ## Features
 * Remote repo can be a dir (not just a file as currently)
 
-##More tests
+## More tests
 * init tests - finer grained and mocked so can be done locally
 * tests for each big fix
 
-##Next level sh*t
+## Next level sh*t
 * A magit style emacs ui?
 * oxitless?!? (inspired by gitless) 
 * CRDT!?! https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type     
