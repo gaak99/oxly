@@ -3,7 +3,7 @@ oxit uses the Dropbox API to view/merge diffs of any two Dropbox file revisions 
 
 So you can edit/save the same file simultaneously on multiple clients (e.g. Emacs/laptop, Orgzly/Android) and then later run oxit (on laptop) to view the diffs, auto-merge last two (usually) revisions (and resolve-conflicts if necessary), and push merged file to Dropbox.
 
-The `merge` cmd uses diff3 and will try to auto-merge. If it can't auto-merge all chunks the conflicts can be resolved by hand (default is emacs ediff).
+The `merge` cmd uses diff3 and will try to auto-merge. If it can't auto-merge all chunks the conflicts can be resolved by hand with emacs ediff-merge-with-ancestor (nice UI) or $EDITOR the diff3 output.
 
 ## Status
 Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxit/issues).
@@ -31,13 +31,13 @@ Changes to the file can be saved (~/Dropbox) on laptop and mobile locally (Orgzl
 
 When ready to merge, do a "final" save to Dropbox on laptop and (Force) save to Dropbox on Orgzly.
 
-oxit `merge` then can do:
-	```pseudocode
+oxit `merge` then can do (pseudocode):
+```bash
 	fa = dropbox latest_rev
 	fb = dropbox latest_rev-1
 	fanc = ancdb_get()
 	diff3 fa fanc fb
-	```
+```
 
 If all diffs not successfully automajically merged, the user can resolve conflicts by hand.
 
@@ -101,7 +101,7 @@ auth_token=$token
    The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
 
 #### Merge revisions
-Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are ready to be viewed/merged with oxit:
+Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are ready to be merged with oxit:
 
 1. Run oxit cmds via oxmerge script on laptop something like this:
 
