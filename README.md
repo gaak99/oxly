@@ -1,9 +1,9 @@
 # Intro
 oxit uses the Dropbox API to view/merge diffs of any two Dropbox file revisions with a git-like cli/flow.
 
-So you can edit/save the same file simultaneously on multiple clients (e.g. Emacs/laptop, Orgzly/Android) and then later run oxit (on laptop) to view the diffs, auto-merge last two (usually) revisions (and resolve-conflicts if necessary), and push merged file to Dropbox.
+So you can edit/save the same file simultaneously on multiple clients (e.g. Emacs/laptop, Orgzly/Android) and then later run oxit (on laptop) to view the diffs, 3-way auto-merge revisions and resolve-conflicts if necessary, and push merged file to Dropbox.
 
-The `merge` cmd uses diff3 and will try to auto-merge. If it can't auto-merge all chunks the conflicts can be resolved by hand with emacs ediff-merge-with-ancestor (nice UI) or $EDITOR the diff3 output.
+The `merge` cmd uses diff3 and will try to auto-merge. If it can't auto-merge all hunks the conflicts can be resolved by hand with emacs ediff-merge-with-ancestor (nice UI) or $EDITOR the diff3 output.
 
 ## Status
 Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxit/issues).
@@ -23,23 +23,22 @@ And if you squint hard enough Dropbox's auto-versioning looks like lightweight c
 
 
 ## Theory of operation
-On Dropbox we keep a small/simple filename=content_hash kv db called the ancdb.
+On Dropbox we keep a small&simple filename=content_hash kv db called the ancdb.
 
 The content_hash is the official Dropbox one.
 
-Changes to the file can be saved (~/Dropbox) on laptop and mobile locally (Orgzly) as needed at the same time.
+Changes to the file-to-be-merged can be saved (~/Dropbox) on laptop and mobile locally (Orgzly) as needed at the same time.
+When ready to merge, the user does a "final" save to Dropbox on laptop and `Force save` to Dropbox on Orgzly.
 
-When ready to merge, do a "final" save to Dropbox on laptop and (Force) save to Dropbox on Orgzly.
-
-oxit `merge` then can do (pseudocode):
+oxit `merge` then can (pseudocode):
 ```bash
-	fa = dropbox latest_rev
-	fb = dropbox latest_rev-1
+	fa = dropbox_get(latest_rev)
+	fb = dropbox_get(latest_rev-1)
 	fanc = ancdb_get()
 	diff3 fa fanc fb
 ```
 
-If all diffs not successfully automajically merged, the user can resolve conflicts by hand.
+If all diff hunks not successfully automajically merged, the user can resolve conflicts by hand.
 
 # Usage
 ```bash
@@ -113,9 +112,9 @@ Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are
 
 2a. If oxmerge finished with no conflicts -- *YAAAY* -- goto step 3 below.
 
-2b. If oxmerge finished with conflicts -- *BOOOO* -- choose one of the options given to resolve the conflict(s).
+2b. If oxmerge finished with conflicts -- *BOOOO* -- choose one of the options output to resolve the conflict(s).
 
-3. Finally on Orgzly `Sync` (`Force Load` sync not necessary) to load merged/latest revision from Dropbox.
+3. Finally on Orgzly `Sync` (`Force Load` not necessary) to load merged/latest revision from Dropbox.
 
 Congrats your file is merged.
 
