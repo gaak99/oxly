@@ -8,7 +8,7 @@ The `merge` cmd uses diff3 and will try to auto-merge. If it can't auto-merge al
 ## Status
 Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxit/issues).
 
-You probbly want to try master HEAD before fetching a release.
+You probably want to try master HEAD before fetching a release.
 
 oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision, so it's pretty low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want using the Dropbox.com site.
 

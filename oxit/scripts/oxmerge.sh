@@ -34,10 +34,15 @@ if [[ ! -d $repo ]]; then
 fi
 
 oxitcmd=oxit
+nlog=5
 
-echo "Cloning $oxurlpre/$fp into $(pwd) ..."
+$oxitcmd --version
+echo "Cloning $dbx_url into $(pwd) ..."
 $oxitcmd clone $dbx_url
-$oxitcmd log --oneline $fp | head -4
+echo "Viewing latest $nlog revisions metadata ..."
+$oxitcmd log --oneline $fp | head -5
+echo "Merging latest 2 revisions data ..."
 $oxitcmd merge $fp
 $oxitcmd add   $fp
+echo "Pushing merged revision data ..."
 $oxitcmd push  $fp
