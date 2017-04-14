@@ -43,6 +43,5 @@ echo "Viewing latest $nlog revisions metadata ..."
 $oxitcmd log --oneline $fp | head -5
 echo "Merging latest 2 revisions data ..."
 $oxitcmd merge $fp
-$oxitcmd add   $fp
 echo "Pushing merged revision data ..."
-$oxitcmd push  $fp
+$oxitcmd push --add $fp

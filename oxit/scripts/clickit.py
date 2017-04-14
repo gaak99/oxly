@@ -54,7 +54,7 @@ def reset(oxit, filepath):
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--nrevs',
               help='Number of latest file revisions (defaults to 5) to download from Dropbox.',
-              required=False, default=10)
+              required=False, default=25)
 @click.argument('src')
 @click.pass_obj
 def clone(oxit, dry_run, src, nrevs):
@@ -136,13 +136,15 @@ def mergerc(oxit, dry_run, emacsclient_path, mergerc_cmd, reva, revb, filepath):
 
 @cli.command(help='Upload result of locally merged files to Dropbox.')
 @click.option('--dry-run/--no-dry-run', default=False)
+@click.option('--add/--no-add', required=False, default=False,
+              help='Add filepath to staging area pre-push.')
 @click.option('--post-push-clone/--no-post-push-clone',
               help='After success on push, (no) resync w/Dropbox.)',
               default=False)
 @click.argument('filepath', required=False, default=None)
 @click.pass_obj
-def push(oxit, dry_run, post_push_clone, filepath):
-    oxit.push(dry_run, post_push_clone, filepath)
+def push(oxit, dry_run, add, post_push_clone, filepath):
+    oxit.push(dry_run, add, post_push_clone, filepath)
     
 @cli.command(help='Copy file from .oxit/ to working dir. If staged version exists revert working dir one to it instead.')
 @click.argument('filepath', required=False, default=None)

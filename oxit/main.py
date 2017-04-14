@@ -183,7 +183,7 @@ class Oxit():
             sys.exit(1)
             
     @_dbxauth
-    def _get_revs_md(self, path, nrevs=10):
+    def _get_revs_md(self, path, nrevs):
         try:
             revs = sorted(self.dbx.files_list_revisions(path,
                                                         limit=nrevs).entries,
@@ -769,8 +769,11 @@ class Oxit():
                 fcon = filepath + ':CONFLICT'
                 os.system('mv %s %s' % (fname, fcon))
                 print('Conflicts found, pls run either ...')
-                print('\tedit diff3 output: $EDITOR %s' % (fcon))
                 print('\tediff 3-way merge: oxit mergerc --reva %s --revb %s %s' % (reva, revb, filepath))
+                print('\t\t then run: oxit push --add %s' % (filepath))
+                print('\tedit diff3 output: $EDITOR %s' % (fcon))
+                print('\t\t then run: mv %s %s' % (fcon, filepath))
+                print('\t\t then run: oxit push --add %s' % (filepath))
             sys.exit(rt)
             
     def merge3_rc(self, dry_run, emacsclient_path, mergerc_cmd, reva, revb, filepath):
@@ -985,7 +988,7 @@ class Oxit():
         index_dir = self._get_pname_index()
         return get_relpaths_recurse(index_dir)
 
-    def push(self, dry_run, post_push_clone, filepath):
+    def push(self, dry_run, add, post_push_clone, filepath):
         """Push/upload staged file upstream to Dropbox.
 
         post_push_clone -- bool -- normally after push completes
@@ -1000,27 +1003,35 @@ class Oxit():
             if filepath not in [s.strip('./') for s in fp_l]:
                 if filepath.startswith('dropbox:'):
                     print('Error: file should be local path not url')
-                sys.exit('Error: %s not in index' % filepath)
+                if not add:
+                    sys.exit('Error: %s not in index' % filepath)
             if dry_run:
+                print('push dryrun add: %s' % add)
                 print('push dryrun filepath: %s' % filepath)
                 print('push dryrun from local repo: %s' % self.repo)
                 print('push dryrun to remote repo: %s' %
                       self._get_mmval('remote_origin'))
             else:
+                if add:
+                    self._add_one_path(filepath)
                 self._push_one_path(filepath)
                 hash = self._set_ancdb(filepath)
-                self._push_ancestor_db()
+                if hash:
+                    self._push_ancestor_db()
         else:
             if not fp_l:
                 print('Nothing to push')
                 return
             for p in fp_l:
                 if dry_run:
+                    print('push dryrun add: %s' % add)
                     print('push dryrun filepath: %s' % filepath)
                     print('push dryrun from local repo: %s' % self.repo)
                     print('push dryrun to remote repo: %s' %
                           self._get_mmval('remote_origin'))
                 else:
+                    if add:
+                        self._add_one_path(filepath)
                     hash = self._push_one_path(p)
                     if hash:
                         self._push_ancestor_db(filepath, hash)
