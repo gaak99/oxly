@@ -32,10 +32,15 @@ When ready to merge, the user does a "final" save to Dropbox on laptop and `Forc
 
 oxit `merge` then can (pseudocode):
 ```bash
-	fa = dropbox_get(latest_rev)
-	fb = dropbox_get(latest_rev-1)
-	fanc = ancdb_get()
-	diff3 fa fanc fb
+	fa = dropbox_download(revs[latest])
+	fb = dropbox_download(revs[latest_rev-1])
+	fanc = dropbox_download(ancdb_get(fpath))
+	rt = diff3 -m fa fanc fb > fout
+	if rt == 0: # no conflicts
+	    dropbox_upload(fout)
+	elseif rt == 1:
+		# hand edit fout or 3way ediff
+		dropbox_upload(f_conflicts_resolved)
 ```
 
 If all diff hunks not successfully automajically merged, the user can resolve conflicts by hand.
@@ -114,7 +119,7 @@ Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are
 
 2b. If oxmerge finished with conflicts -- *BOOOO* -- choose one of the options output to resolve the conflict(s).
 
-3. Finally on Orgzly `Sync` (`Force Load` not necessary) to load merged/latest revision from Dropbox.
+3. Finally on Orgzly `Sync` (`Force Load` not necessary) to load merged/latest revision from Dropbox. This should be done before any other changes are saved to Dropbox.
 
 Congrats your file is merged.
 
@@ -129,10 +134,10 @@ Congrats your file is merged.
 
 #### Using oxit
 
-##### oxit cmds log, diff, and cat are handy to view revisions
+##### oxit cmds log (--oneline), diff, and cat are handy to view revisions
 
 #### Using ediff
-* ediff skillz def a plus here. But if not currently avail then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- Emacs app.
+* ediff skillz def a plus here. But if not currently not used to using ediff then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- Emacs app.
 * Orgzly seems to add blank line(s) so don't ediff merge them out on Emacs else u will keep seeing them come back -- zombielike --  to haunt you and must re-merge again and again.
 * BTW if you don't dig your ediff config try mines (that I found on the Net)
 
