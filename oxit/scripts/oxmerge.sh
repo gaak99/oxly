@@ -39,8 +39,10 @@ nlog=5
 $oxitcmd --version
 echo "Cloning $dbx_url into $(pwd) ..."
 $oxitcmd clone $dbx_url
-echo "Viewing latest $nlog revisions metadata ..."
-$oxitcmd log --oneline $fp | head -5
+echo "Viewing metadata latest 2 revisions (cached locally) ..."
+$oxitcmd log --oneline $fp | head -2
+echo "Viewing metadata least latest 2 revisions (cached locally) ..."
+$oxitcmd log --oneline $fp | tail -2
 echo "Merging latest 2 revisions data ..."
 $oxitcmd merge $fp
 echo "Pushing merged revision data ..."

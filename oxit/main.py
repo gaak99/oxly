@@ -455,7 +455,9 @@ class Oxit():
                 sys.exit(1)
             rev = self._hash2rev(filepath, anchash)
             if rev == None:
-                print('Error: ancestor not found in local metadata. Try clone with higher nrevs.')
+                print('Warning: ancestor rev not found in local metadata cache.  Try clone with higher nrevs.')
+                print('Warning: try; oxit clone --nrevs %d %s' % (nrevs+50, src_url))
+                print('Warning: if that succeeds, you can rerun oxmerge or continue with oxit merge.')
                 sys.exit(1)
             print('Checking ancestor rev data ...')
             self.pull(rev, filepath)
