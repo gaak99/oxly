@@ -978,9 +978,17 @@ class Oxit():
                 if (err.error.is_path() and
                         err.error.get_path().error.is_insufficient_space()):
                     print("ERROR: Cannot upload; insufficient space.")
+                    print('When problem resolved, try:')
+                    print('\noxit ancdb_push')
+                    print("Then select Sync (regular, Forced not neccessary) note on Orgzly now.")
+                    print("It should be done before any other changes are saved to this file on Dropbox.")
                     sys.exit(1)
                 elif err.user_message_text:
                     print(err.user_message_text)
+                    print('When problem resolved, try:')
+                    print('\noxit ancdb_push')
+                    print("Then select Sync (regular, Forced not neccessary) note on Orgzly now.")
+                    print("It should be done before any other changes are saved to this file on Dropbox.")
                     sys.exit(1)
                 else:
                     print(err)
@@ -1047,7 +1055,10 @@ class Oxit():
             self._save_repo()
             print('Re-cloning to get current metadata/data from Dropbox...')
             self.clone(dry_run, dropbox_url, nrevs, dl_ancdb=False)
+
+        # Our work is done here praise $DIETY as the user syncs on Orgzly.
         print("\nPlease select Sync (regular, Forced not neccessary) note on Orgzly now.")
+        print("It should be done before any other changes are saved to this file on Dropbox.")
 
     def _save_repo(self):
         # Save current .oxit/.tmp (includes index dir, maybe for recovery?).

@@ -76,7 +76,7 @@ auth_token=$token
 ```
 
 ### One time per file
-1. Make sure Orgzly has a clean sync of file.
+1. Make sure Orgzly has a clean `Sync` of file.
 
 2. Run oxit cmds to init file in the ancestor db on laptop something like this:
  
@@ -134,7 +134,11 @@ Congrats your file is merged.
 
 #### Using oxit
 
-##### oxit cmds log (--oneline), diff, and cat are handy to view revisions
+##### oxit cmds log (--oneline), diff, and cat are handy to view revision's metadata and data
+
+##### Tip for clean -- no conflicts are a wonderful thing -- merge
+
+* I have one misc notes file I edit several times a day on Emacs and Orgzly and oxmerge once a day. And I'm mostly adding new (org top level) entries and much less changing older ones. To get a better chance of a clean (auto) merge I usually append note entries on Orgzly and prepend (below org TITLE header(s)) on emacs. Also on emacs I make sure the body of the note added has a empty line before and after as Orgzly likes it that way. So when Orgzly later groks it no changes are done that many generate a dirty merge.
 
 #### Using ediff
 * ediff skillz def a plus here. But if not currently not used to using ediff then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- Emacs app.
