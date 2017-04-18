@@ -1,7 +1,7 @@
 # Intro
 oxit uses the Dropbox API to view/merge diffs of any two Dropbox file revisions with a git-like cli/flow.
 
-So you can edit/save the same file simultaneously on multiple clients (e.g. Emacs/laptop, Orgzly/Android) and then later run oxit (on laptop) to view the diffs, 3-way auto-merge revisions and resolve-conflicts if necessary, and push merged file to Dropbox.
+So you can edit and save the same file simultaneously on multiple clients (e.g. Emacs/laptop, Orgzly/Android) and then later run oxit (on laptop) to view the diffs, 3-way auto-merge revisions and resolve-conflicts (if necessary), and push merged file to Dropbox.
 
 The `merge` cmd uses diff3 and will try to auto-merge. If it can't auto-merge all hunks the conflicts can be resolved by hand with emacs ediff-merge-with-ancestor (nice UI) or $EDITOR the diff3 output.
 
@@ -10,7 +10,7 @@ Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mob
 
 You probably want to try master HEAD before fetching a release.
 
-oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision, so it's pretty low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want using the Dropbox.com site.
+oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision, so should be low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want using the Dropbox.com site.
 
 ## Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
@@ -30,20 +30,24 @@ The content_hash is the official Dropbox one.
 Changes to the file-to-be-merged can be saved (~/Dropbox) on laptop and mobile locally (Orgzly) as needed at the same time.
 When ready to merge, the user does a "final" save to Dropbox on laptop and `Force save` to Dropbox on Orgzly.
 
-oxit `merge` then can (pseudocode):
+then `oxit clone/merge/push` will (pseudocode):
 ```bash
 	fa = dropbox_download(revs[latest])
 	fb = dropbox_download(revs[latest_rev-1])
 	fanc = dropbox_download(ancdb_get(fpath))
-	rt = diff3 -m fa fanc fb > fout
+	rt = diff3 -m fa fanc fb #> fout
 	if rt == 0: # no conflicts
-	    dropbox_upload(fout)
+		pass
 	elseif rt == 1:
 		# hand edit fout or 3way ediff
-		dropbox_upload(f_conflicts_resolved)
+	dropbox_upload(fout)
+	ancdb_set(fpath); dropbox_upload(ancdb)
 ```
 
-If all diff hunks not successfully automajically merged, the user can resolve conflicts by hand.
+Then on Orgzly select `Sync` to finish oxmerge cycle.
+
+### Notes:
+* Once the oxit merge process begins begins here the user needs to be careful and not change the file anymore (until process completes). A lock of the file would be nice but I don't see it in the Dropbox v2 api.
 
 # Usage
 ```bash
@@ -58,9 +62,11 @@ $ oxit sub-cmd --help
 
 ```bash
 git clone https://github.com/gaak99/oxit.git
-cd oxit && sudo python setup.py install
-export MYBIN=$HOME/bin # set for your env
-cp oxit/scripts/oxmerge.sh $MYBIN/oxmerge && chmod 755 $MYBIN/oxmerge
+export SUDO=sudo           # set for your env
+cd oxit && $SUDO python setup.py install
+export MYBIN=/usr/local/bin # set for your env
+$SUDO cp oxit/scripts/oxmerge.sh $MYBIN/oxmerge
+$SUDO chmod 755 $MYBIN/oxmerge
 ```
 * Dropbox API app and OAuth 2 token
 
@@ -93,8 +99,6 @@ auth_token=$token
 ### As needed (dailyish)
 #### Save same file/note on Dropbox clients
 1. Save file shared via Dropbox on laptop (~/Dropbox) as needed.
-   When you want to sync/merge with Orgzly version don't save any more revisions on laptop until the oxit push is completed.
-   It's not terrible if you do -- no data loss -- but you may have to redo the oxit procedure below.
 
 2. With Orgzly save (locally) the same note.
 
@@ -104,6 +108,8 @@ auth_token=$token
 
    The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
 
+   But once you do this don't make any more changes (via Emacs/Orgzly/etc) to the file as it may cause problems with the merge. See section Caveats/Gotchas below.
+	
 #### Merge revisions
 Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are ready to be merged with oxit:
 
@@ -114,34 +120,38 @@ Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are
 
 	$ oxmerge dropbox://orgzly/foo.txt
 	```
-
+	
 2a. If oxmerge finished with no conflicts -- *YAAAY* -- goto step 3 below.
 
 2b. If oxmerge finished with conflicts -- *BOOOO* -- choose one of the options output to resolve the conflict(s).
 
-3. Finally on Orgzly `Sync` (`Force Load` not necessary) to load merged/latest revision from Dropbox. This should be done before any other changes are saved to Dropbox.
+3. Finally on Orgzly select `Sync` (`Force Load` not necessary) to load merged/latest revision from Dropbox. This should be done before any other changes are saved to Dropbox.
 
 Congrats your file is merged.
 
-### Tips/Tricks/Caveats/Gotchas
+### Caveats/Gotchas
 
-#### Design
-* oxit is not git -- Def not git as no real commits, no branches, single user, etc. But as far as a poor-man's DVCS goes, oxit can be useful when git is not avail. Oxit just implements enough of a subset of git to support a basic clone-merge-add-push flow (and a few others to view the revisions and merged file). New files in wd/index not supported.
+##### Careful no file locking!
+* For a succesful merge, once the oxit merge process (aka 2 latest revisions downloaded) begins the user needs to be careful and not change the file anymore outside of the process (until process completes). A lock of the file would be useful here but I don't see it in the Dropbox v2 api.
 
-* My use case is Emacs on a Unix laptop and Android Orgzly on mobile phone so far only only that config has much real world use. More clients should be viable as long as two at a time are merged/pushed in a careful manner (don't save any non-oxit changes to Dropbox while this is being done). There's no locking done here so the user has to be careful and follow the procedure above.
+##### 2-way ediff merge as fallback
+* `oxit merge2` will do a 2-way merge -- no ancestor involved so no auto-merge -- which might be handy if the ancdb is not set correctly. Also note it can be done on any two revisions, see `oxit merge2 --help`
 
-* Only handles a single file on Dropbox as remote repo (might be expanded to a dir tree in future). 
+##### Revert revision on Dropbox as fallback
+* oxit does no Deletes via Dropbox API and all merges/pushes are saved as a new revision. If a mismerge is saved you can easily revert to the revision you want using the Dropbox.com site.
+
+### Tips/Tricks
 
 #### Using oxit
 
-##### oxit cmds log (--oneline), diff, and cat are handy to view revision's metadata and data
+##### oxit cmds log (--oneline is nice), diff, and cat are handy to view a revision metadata/data
+* See `oxit cmd --help`.
 
-##### Tip for clean -- no conflicts are a wonderful thing -- merge
-
-* I have one misc notes file I edit several times a day on Emacs and Orgzly and oxmerge once a day. And I'm mostly adding new (org top level) entries and much less changing older ones. To get a better chance of a clean (auto) merge I usually append note entries on Orgzly and prepend (below org TITLE header(s)) on emacs. Also on emacs I make sure the body of the note added has a empty line before and after as Orgzly likes it that way. So when Orgzly later groks it no changes are done that many generate a dirty merge.
+##### Tips for a clean -- no conflicts are a wonderful thang -- merge
+* I have a misc notes file I slang url's and ideas to several times a day on Emacs and Orgzly and oxmerge once a day. And I'm mostly adding new (org top level) entries and much less changing older ones. To get a better chance of a clean (auto) merge I usually append note entries on Orgzly and prepend (below org TITLE header(s)) on Emacs. Also on Emacs I make sure the body of the note added has a empty line before and after as Orgzly likes it that way. So when Orgzly later groks it no changes are done that many result in an anoying dirty merge.
 
 #### Using ediff
-* ediff skillz def a plus here. But if not currently not used to using ediff then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- Emacs app.
+* ediff skillz def a plus here. But if you are not currently used to using ediff then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- but very useful Emacs app.
 * Orgzly seems to add blank line(s) so don't ediff merge them out on Emacs else u will keep seeing them come back -- zombielike --  to haunt you and must re-merge again and again.
 * BTW if you don't dig your ediff config try mines (that I found on the Net)
 
@@ -158,6 +168,14 @@ Congrats your file is merged.
 ```
 
 ##### Developed/tested on MacOS and Linux so non-Unix-like systems may be trouble
+
+#### Design
+* oxit is not git -- no real commits, no branches, single user, etc. But as far as a poor-man's DVCS goes, oxit can be useful when git is not avail. Oxit just implements enough of a subset of git to support a basic clone-merge-add-push flow (and a few others to view the revisions and merged file). New files in wd/index not supported.
+
+* My use case is Emacs on a Unix laptop and Android Orgzly on mobile phone so far only only that config has much real world use. More clients should be viable as long as two at a time are merged/pushed in a careful manner (don't save any non-oxit changes to Dropbox while this is being done). There's no locking done here so the user has to be careful and follow the procedure above.
+
+* Only handles a single file on Dropbox as remote repo (might be expanded to a dir tree in future). 
+
 
 # Tests
 

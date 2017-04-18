@@ -170,19 +170,19 @@ def getmetameta(oxit, key):
 def calchash(oxit, filepath):
     oxit.calc_dropbox_hash(filepath)
 
-@cli.command(help='Calculate and set Dropbox filesMetaData content_hash into ancestor db.')
+@cli.command(help='Calculate and set Dropbox filesMetaData content_hash into ancestor db locally.')
 @click.argument('filepath')
 @click.pass_obj
 def ancdb_set(oxit, filepath):
     oxit.ancdb_set(filepath)
 
-@cli.command(help='Get Dropbox filesMetaData content_hash from ancestor db.')
+@cli.command(help='Get Dropbox filesMetaData content_hash from local copy of ancestor db.')
 @click.argument('filepath')
 @click.pass_obj
 def ancdb_get(oxit, filepath):
     oxit.ancdb_get(filepath)
 
-@cli.command(help='Push ancestor db to Dropbox.')
+@cli.command(help='Push/upload ancestor db to Dropbox.')
 @click.pass_obj
 def ancdb_push(oxit):
     oxit.ancdb_push()

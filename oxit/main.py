@@ -425,7 +425,7 @@ class Oxit():
         print("Downloading metadata of %d latest revisions on Dropbox ..." %
               nrevs, end='')
         md_l = self._get_revs_md(filepath, nrevs)
-        print(' done')
+        print(' done.')
         self._log_revs_md(md_l,
                           self._get_pname_logpath(filepath),
                           self._get_pname_hrdbpath(filepath))
@@ -771,7 +771,7 @@ class Oxit():
                 fcon = filepath + ':CONFLICT'
                 os.system('mv %s %s' % (fname, fcon))
                 print('Conflicts found, pls run either ...')
-                print('\tediff 3-way merge: oxit mergerc --reva %s --revb %s %s' % (reva, revb, filepath))
+                print('\temacsclient ediff 3-way merge: oxit mergerc --reva %s --revb %s %s' % (reva, revb, filepath))
                 print('\t\t then run: oxit push --add %s' % (filepath))
                 print('\tedit diff3 output: $EDITOR %s' % (fcon))
                 print('\t\t then run: mv %s %s' % (fcon, filepath))
