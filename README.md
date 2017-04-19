@@ -24,7 +24,6 @@ And if you squint hard enough Dropbox's auto-versioning looks like lightweight c
 
 ## Theory of operation
 On Dropbox we keep a small&simple filename=content_hash kv db called the ancdb.
-
 The content_hash is the official Dropbox one.
 
 Changes to the file-to-be-merged can be saved (~/Dropbox) on laptop and mobile locally (Orgzly) as needed at the same time.
@@ -32,6 +31,7 @@ When ready to merge, the user does a "final" save to Dropbox on laptop and `Forc
 
 then `oxit clone/merge/push` will (pseudocode):
 ```bash
+	# fpath is file path being merged
 	fa = dropbox_download(revs[latest])
 	fb = dropbox_download(revs[latest_rev-1])
 	fanc = dropbox_download(ancdb_get(fpath))
@@ -39,7 +39,7 @@ then `oxit clone/merge/push` will (pseudocode):
 	if rt == 0: # no conflicts
 		pass
 	elseif rt == 1:
-		# hand edit fout or 3way ediff
+		# hand edit fout or 3-way ediff
 	dropbox_upload(fout)
 	ancdb_set(fpath); dropbox_upload(ancdb)
 ```
@@ -138,14 +138,14 @@ Congrats your file is merged.
 
 ###### Revert rev using oxit
 
-	```bash
-	$ oxit log --oneline orgzly/foo.org #find rev needed
-	$ oxit cat --rev $rev orgzly/foo.org > orgzly/foo.org
-	$ oxit push --no-dry-run orgzly/foo.org
-	# view/check it
-	$ oxit clone dropbox://orgzly/foo.org
-	$ oxit cat orgzly/foo.org
-	```
+```bash
+$ oxit log --oneline orgzly/foo.org #find rev needed
+$ oxit cat --rev $rev orgzly/foo.org > orgzly/foo.org
+$ oxit push --no-dry-run orgzly/foo.org
+# view/check it
+$ oxit clone dropbox://orgzly/foo.org
+$ oxit cat orgzly/foo.org
+```
 	
 ###### Revert rev on dropbox.com
 * Login using web ui, look for menu right of file
@@ -213,7 +213,7 @@ None.
 ## Copyright
 Copyright (c) 2016 Glenn Barry (gmail: gaak99)
 
-#Refs
+# Refs
 <http://www.orgzly.com>
 
 <https://www.gnu.org/software/emacs/manual/html_node/ediff/>
