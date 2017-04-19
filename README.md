@@ -10,7 +10,7 @@ Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mob
 
 You probably want to try master HEAD before fetching a release.
 
-oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision, so should be low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want using the Dropbox.com site.
+oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision, so should be low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want, see Caveats/Gotchas below
 
 ## Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
@@ -89,9 +89,9 @@ auth_token=$token
 	```bash
 	$ mkdir /tmp/myoxitrepo ;  cd /tmp/myoxitrepo 
 
-	$ oxit clone dropbox://orgzly/foo.txt
+	$ oxit clone dropbox://orgzly/foo.org
 	
-	$ oxit ancdb_set dropbox://orgzly/foo.txt
+	$ oxit ancdb_set dropbox://orgzly/foo.org
 
 	$ oxit ancdb_push
 	```
@@ -117,8 +117,7 @@ Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are
 
 	```bash
 	$ cd /tmp/myoxitrepo 
-
-	$ oxmerge dropbox://orgzly/foo.txt
+	$ oxmerge dropbox://orgzly/foo.org
 	```
 	
 2a. If oxmerge finished with no conflicts -- *YAAAY* -- goto step 3 below.
@@ -134,11 +133,26 @@ Congrats your file is merged.
 ##### Careful no file locking!
 * For a succesful merge, once the oxit merge process (aka 2 latest revisions downloaded) begins the user needs to be careful and not change the file anymore outside of the process (until process completes). A lock of the file would be useful here but I don't see it in the Dropbox v2 api.
 
+##### Revert revision as fallback
+* If a mismerge is saved you can easily revert to the revision you want using oxit or the Dropbox.com site.
+
+###### Revert rev using oxit
+
+	```bash
+	$ oxit log --oneline orgzly/foo.org #find rev needed
+	$ oxit cat --rev $rev orgzly/foo.org > orgzly/foo.org
+	$ oxit push --no-dry-run orgzly/foo.org
+	# view/check it
+	$ oxit clone dropbox://orgzly/foo.org
+	$ oxit cat orgzly/foo.org
+	```
+	
+###### Revert rev on dropbox.com
+* Login using web ui, look for menu right of file
+
 ##### 2-way ediff merge as fallback
 * `oxit merge2` will do a 2-way merge -- no ancestor involved so no auto-merge -- which might be handy if the ancdb is not set correctly. Also note it can be done on any two revisions, see `oxit merge2 --help`
 
-##### Revert revision on Dropbox as fallback
-* oxit does no Deletes via Dropbox API and all merges/pushes are saved as a new revision. If a mismerge is saved you can easily revert to the revision you want using the Dropbox.com site.
 
 ### Tips/Tricks
 

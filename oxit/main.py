@@ -1057,8 +1057,8 @@ class Oxit():
             self.clone(dry_run, dropbox_url, nrevs, dl_ancdb=False)
 
         # Our work is done here praise $DIETY as the user syncs on Orgzly.
-        print("\nPlease select Sync (regular, Forced not neccessary) note on Orgzly now.")
-        print("It should be done before any other changes are saved to this file on Dropbox.")
+        print("\nPlease select Sync (regular, Forced not necessary) note on Orgzly now.")
+        print("It should be done before any other changes are saved to this file on Dropbox/Emacs/Orgzly.")
 
     def _save_repo(self):
         # Save current .oxit/.tmp (includes index dir, maybe for recovery?).
