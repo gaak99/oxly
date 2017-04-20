@@ -26,10 +26,7 @@ And if you squint hard enough Dropbox's auto-versioning looks like lightweight c
 On Dropbox we keep a small&simple filename=content_hash kv db called the ancdb.
 The content_hash is the official Dropbox one.
 
-Changes to the file-to-be-merged can be saved (~/Dropbox) on laptop and mobile locally (Orgzly) as needed at the same time.
-When ready to merge, the user does a "final" save to Dropbox on laptop and `Force save` to Dropbox on Orgzly.
-
-then `oxit clone/merge/push` will (pseudocode):
+`oxit clone/merge/push` will (pseudocode):
 ```bash
 	# fpath is file path being merged
 	fa = dropbox_download(revs[latest])
@@ -69,6 +66,7 @@ export MYBIN=/usr/local/bin # set for your env
 $SUDO cp oxit/scripts/oxmerge.sh $MYBIN/oxmerge
 $SUDO chmod 755 $MYBIN/oxmerge
 ```
+
 * Dropbox API app and OAuth 2 token
 
 Create a Dropbox API app (w/full access to files and types) from Dropbox app console
