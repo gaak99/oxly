@@ -49,7 +49,7 @@ then `oxit clone/merge/push` will (pseudocode):
 
  2. On laptop run oxmerge (wrapper around oxit). If auto-merge does not resolve all conflicts, resolve them by hand.
 
- 3. On Orgzly run 'Sync'.
+ 3. On Orgzly run `Sync`.
 
 # Oxit Usage
 ```bash
