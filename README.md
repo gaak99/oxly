@@ -54,7 +54,7 @@ $ oxit --help
 $ oxit sub-cmd --help
 ```
 
-## Quick start
+## Quick Start
 ### One time
 * Install
 
@@ -88,19 +88,21 @@ auth_token=$token
 	```bash
 	$ mkdir /tmp/myoxitrepo ;  cd /tmp/myoxitrepo 
 	$ oxit clone dropbox://orgzly/foo.org
-	$ oxit ancdb_set dropbox://orgzly/foo.org
+	$ oxit ancdb_set orgzly/foo.org
 	$ oxit ancdb_push
 	```
 
 ### As needed (dailyish)
-#### Save same file/note on Dropbox clients
-1. Save file shared via Dropbox on laptop (~/Dropbox) as needed.
+#### Save same file/note on Emacs and Orgzly
+* The key point here is the latest Emacs version and latest Orgzly version need to be the last two revisions in Dropbox for the oxmerge script to work good.  (note advanced users can merge any two revisions via oxit)
 
-2. With Orgzly save (locally) the same note.
+1. Save file shared via Dropbox on laptop/Emacs (~/Dropbox) as needed.
 
-3. With Orgzly select `Sync` notes on Orgzly main menu.
+2. On mobile/Orgzly save (locally) the same note as needed.
 
-4. If sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force Save` (long press on note) on Orgzly.
+3. When ready to sync/merge, on Orgzly select `Sync` notes on Orgzly main menu.
+
+4. If the sync fails and the Orgzly error msg says it's modified both local and remote -- *this* is the case we need oxit -- then `Force Save` (long press on note) on Orgzly.
 
    The forced save is safe cuz the prev edits will be saved by Dropbox as seperate revisions.
 
