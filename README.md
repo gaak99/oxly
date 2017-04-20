@@ -44,15 +44,16 @@ then `oxit clone/merge/push` will (pseudocode):
 	ancdb_set(fpath); dropbox_upload(ancdb)
 ```
 
-Then on Orgzly select `Sync` to finish oxmerge cycle.
+## Merge Flow
+ 1. On Orgzly (when regular `Sync` fails) select `Forced sync`.
 
-### Notes:
-* Once the oxit merge process begins begins here the user needs to be careful and not change the file anymore (until process completes). A lock of the file would be nice but I don't see it in the Dropbox v2 api.
+ 2. On laptop run oxmerge (wrapper around oxit). If auto-merge does not resolve all conflicts, resolve them by hand.
 
-# Usage
+ 3. On Orgzly run 'Sync'.
+
+# Oxit Usage
 ```bash
 $ oxit --help
-
 $ oxit sub-cmd --help
 ```
 
@@ -88,11 +89,8 @@ auth_token=$token
  
 	```bash
 	$ mkdir /tmp/myoxitrepo ;  cd /tmp/myoxitrepo 
-
 	$ oxit clone dropbox://orgzly/foo.org
-	
 	$ oxit ancdb_set dropbox://orgzly/foo.org
-
 	$ oxit ancdb_push
 	```
 
