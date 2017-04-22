@@ -29,8 +29,8 @@ The content_hash is the official Dropbox one.
 `oxit clone/merge/push` will (pseudocode):
 ```bash
 	# fpath is file path being merged
-	fa = dropbox_download(revs[latest])
-	fb = dropbox_download(revs[latest_rev-1])
+	fa = dropbox_download(revs[latest])       # latest on Orgzly
+	fb = dropbox_download(revs[latest_rev-1]) # latest on Emacs
 	fanc = dropbox_download(ancdb_get(fpath))
 	rt = diff3 -m fa fanc fb #> fout
 	if rt == 0: # no conflicts
@@ -42,7 +42,7 @@ The content_hash is the official Dropbox one.
 ```
 
 ## Merge Flow
- 1. On Orgzly (when regular `Sync` fails) select `Forced sync`.
+ 1. On Orgzly (when regular `Sync` fails) select `Force Save`.
 
  2. On laptop run oxmerge (wrapper around oxit). If auto-merge does not resolve all conflicts, resolve them by hand.
 
@@ -86,10 +86,8 @@ auth_token=$token
 2. Run oxit cmds to init file in the ancestor db on laptop something like this:
  
 	```bash
-	$ mkdir /tmp/myoxitrepo ;  cd /tmp/myoxitrepo 
-	$ oxit clone dropbox://orgzly/foo.org
-	$ oxit ancdb_set orgzly/foo.org
-	$ oxit ancdb_push
+	$ mkdir /tmp/myoxitrepo ;  cd /tmp/myoxitrepo
+	$ oxit clone --init-ancdb dropbox://orgzly/foo.org
 	```
 
 ### As needed (dailyish)

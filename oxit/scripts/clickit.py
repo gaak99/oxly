@@ -52,13 +52,14 @@ def reset(oxit, filepath):
 
 @cli.command(help='Download revisions of Dropbox file to local dir/repo and checkout HEAD to working dir. Local dir default is $PWD but can be set (see global opts), SRC format: dropbox://$filepath')
 @click.option('--dry-run/--no-dry-run', default=False)
+@click.option('--init-ancdb/--no-init-ancdb', default=False)
 @click.option('--nrevs',
               help='Number of latest metadata of revisions (defaults to 50) to download from Dropbox.',
               required=False, default=50)
 @click.argument('src')
 @click.pass_obj
-def clone(oxit, dry_run, src, nrevs):
-    oxit.clone(dry_run, src, nrevs)
+def clone(oxit, dry_run, src, nrevs, init_ancdb):
+    oxit.clone(dry_run, src, nrevs, init_ancdb)
 
 @cli.command(help='Run diff(1) to display the data differences of two revisions.')
 @click.option('--diff-cmd', required=False,

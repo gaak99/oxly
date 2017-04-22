@@ -385,7 +385,7 @@ class Oxit():
         self.mmdb.set('nrevs', nrevs)
         self.mmdb.dump()
 
-    def clone(self, dry_run, src_url, nrevs, dl_ancdb=True):
+    def clone(self, dry_run, src_url, nrevs, init_ancdb, dl_ancdb=True):
         """Given a dropbox url for one file*, fetch the
         n revisions of the file and store locally in repo's
         .oxit dir and checkout HEAD to working dir.
@@ -445,22 +445,28 @@ class Oxit():
                 print('\n\tDownloading ancestor db ...', end='')
                 self._download_ancdb(ancdb_path)
                 print(' done.')
-            ancdb = self._open_ancdb()
-            anchash = ancdb.get(filepath.strip('/'))
-            if anchash == None:
-                print('Warning: ancestor hash and rev not found: clone anchash==None')
-                print('Warning: 3-way merge cant be done, maybe try 2-way merge (oxit merge2 --help)')
-                print('Warning: to init the ancdb for this file run; oxit ancdb_set %s' % filepath.strip('/'))
-                print('Warning: then run; oxit ancdb_push')
-                sys.exit(1)
-            rev = self._hash2rev(filepath, anchash)
-            if rev == None:
-                print('Warning: ancestor rev not found in local metadata cache.  Try clone with higher nrevs.')
-                print('Warning: try; oxit clone --nrevs %d %s' % (nrevs+50, src_url))
-                print('Warning: if that succeeds, you can rerun oxmerge or continue with oxit merge.')
-                sys.exit(1)
-            print('Checking ancestor rev data ...')
-            self.pull(rev, filepath)
+            if init_ancdb:
+                self._debug('clone: init_ancdb True')
+                self.ancdb_set(filepath.strip('/'))
+                self.ancdb_push()
+            else:
+                self._debug('clone: init_ancdb False')
+                ancdb = self._open_ancdb()
+                anchash = ancdb.get(filepath.strip('/'))
+                if anchash == None:
+                    print('Warning: ancestor hash and rev not found: clone anchash==None')
+                    print('Warning: 3-way merge cant be done, maybe try 2-way merge (oxit merge2 --help)')
+                    print('Warning: to init the ancdb for this file run; oxit ancdb_set %s' % filepath.strip('/'))
+                    print('Warning: then run; oxit ancdb_push')
+                    sys.exit(1)
+                rev = self._hash2rev(filepath, anchash)
+                if rev == None:
+                    print('Warning: ancestor rev not found in local metadata cache.  Try clone with higher nrevs.')
+                    print('Warning: try; oxit clone --nrevs %d %s' % (nrevs+50, src_url))
+                    print('Warning: if that succeeds, you can rerun oxmerge or continue with oxit merge.')
+                    sys.exit(1)
+                print('Checking ancestor rev data ...')
+                self.pull(rev, filepath)
 
     def _add_one_path(self, path):
         # cp file from working tree to index tree dir
