@@ -124,6 +124,35 @@ Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are
 
 Congrats your file is merged.
 
+#### oxmerge example run
+```bash
+oxmerge dropbox://orgzly/misc-notes-spring17.org 
+oxit, version 0.9.21
+Cloning dropbox://orgzly/misc-notes-spring17.org into /tmp/oxnotes ...
+Moving/saving old /tmp/oxnotes/.oxit/.tmp to /tmp/oxnotes/.oxit/.old/oxittmp.10636 ... done.
+Downloading metadata of 50 latest revisions on Dropbox ... done.
+Checking 2 latest revisions in Dropbox...
+	downloading rev 33880446decd data ... done.
+	downloading rev 33870446decd data ... done.
+Checking ancestor db ... already downloaded.
+Checking ancestor rev data ...
+	downloading rev 33670446decd data ... done.
+Viewing metadata latest 2 revisions (cached locally) ...
+33880446decd	26242	2017-04-24 01:54:16 EDT-0400	427013b2
+33870446decd	28816	2017-04-24 01:50:32 EDT-0400	b97299f0
+Viewing metadata least latest 2 revisions (cached locally) ...
+32cf0446decd	20509	2017-04-19 11:41:03 EDT-0400	bcba0f1d
+32ce0446decd	20504	2017-04-19 11:38:50 EDT-0400	4591b454
+Merging latest 2 revisions data ...
+No conflicts found. File fully merged locally in orgzly/misc-notes-spring17.org
+Pushing merged revision data ...
+Uploading staged orgzly/misc-notes-spring17.org to Dropbox as /orgzly/misc-notes-spring17.org ... done.
+Uploading ancestor db orgzly/_oxit_ancestor_pickledb.json to Dropbox ... done.
+
+Please select Sync (regular, Forced not necessary) note on Orgzly now.
+It should be done before any other changes are saved to this file on Dropbox/Emacs/Orgzly.
+```
+
 ### Caveats/Gotchas
 
 ##### Careful no file locking!
