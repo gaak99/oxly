@@ -1,23 +1,25 @@
 # Intro
-oxit uses the Dropbox API to view/merge diffs of any two Dropbox file revisions with a git-like cli/flow.
+oxit uses the Dropbox API to merge two Dropbox file revisions with a git-like cli.
 
-So you can edit and save the same file simultaneously on multiple clients (e.g. Emacs/laptop, Orgzly/Android) and then later run oxit (on laptop) to view the diffs, 3-way auto-merge revisions and resolve-conflicts (if necessary), and push merged file to Dropbox.
+So you can edit and save the same file simultaneously on two Dropbox clients (usually Emacs/laptop and Orgzly/mobile) and then later run oxit on laptop to view/diff/merge/push revisions.
 
-The `merge` cmd uses diff3 and will try to auto-merge. If it can't auto-merge all hunks the conflicts can be resolved by hand with emacs ediff-merge-with-ancestor (nice UI) or $EDITOR the diff3 output.
+The `merge` cmd uses diff3(1) and will try to auto-merge. If it can't auto-merge all hunks the conflicts can be resolved by hand with Emacs' ediff-merge-with-ancestor (nice UI) or $EDITOR the diff3 output.
+
+My use case is two Dropbox clients (Emacs/Unix, Ogzly/Android) so more/other clients not tested but maybe can be done carefully and two at a time. 
 
 ## Status
 Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxit/issues).
 
 You probably want to try master HEAD before fetching a release.
 
-oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision, so should be low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want, see Caveats/Gotchas below
+oxit does no Deletes via Dropbox API and all edits/merges are saved as a new revision, so should be low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want, see Caveats/Gotchas below.
 
 ## Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
 And Dropbox will save them for 1 month (free) or 1 year (paid).
 And as a long time casual Dropbox user this was news to me recently.
 
-And my fave org-mode mobile app Orgzly supports Dropbox but not git(1) yet so I needed a way to merge notes that are modified on both laptop and mobile.
+And my fave org-mode mobile app Orgzly supports Dropbox but not git(1) (yet) so I needed a way to merge notes that are modified on both laptop and mobile.
 
 And if you squint hard enough Dropbox's auto-versioning looks like lightweight commits and maybe we can simulate a (limited) DVCS here enough to be useful.
 
@@ -29,8 +31,8 @@ The content_hash is the official Dropbox one.
 `oxit clone/merge/push` will (pseudocode):
 ```bash
 	# fpath is file path being merged
-	fa = dropbox_download(revs[latest])       # latest on Orgzly
-	fb = dropbox_download(revs[latest_rev-1]) # latest on Emacs
+	fa = dropbox_download(revs[latest])       # latest from Orgzly
+	fb = dropbox_download(revs[latest_rev-1]) # latest from Emacs
 	fanc = dropbox_download(ancdb_get(fpath))
 	rt = diff3 -m fa fanc fb #> fout
 	if rt == 0: # no conflicts
@@ -44,7 +46,7 @@ The content_hash is the official Dropbox one.
 ## Merge Flow
  1. On Orgzly (when regular `Sync` fails) select `Force Save`.
 
- 2. On laptop run oxmerge (wrapper around oxit). If auto-merge does not resolve all conflicts, resolve them by hand.
+ 2. On laptop run oxmerge (wrapper around oxit). If auto-merge (diff3(1)) does not resolve all conflicts, resolve them by hand.
 
  3. On Orgzly run `Sync`.
 
@@ -89,6 +91,8 @@ auth_token=$token
 	$ mkdir /tmp/myoxitrepo ;  cd /tmp/myoxitrepo
 	$ oxit clone --init-ancdb dropbox://orgzly/foo.org
 	```
+
+3. Make edits and save same file as needed on Emacs and Orgzly like usual.
 
 ### As needed (dailyish)
 #### Save same file/note on Emacs and Orgzly
@@ -161,7 +165,7 @@ It should be done before any other changes are saved to this file on Dropbox/Ema
 ##### Revert revision as fallback
 * If a mismerge is saved you can easily revert to the revision you want using oxit or the Dropbox.com site.
 
-###### Revert rev using oxit
+###### Revert revision using oxit
 
 ```bash
 $ oxit log --oneline orgzly/foo.org #find rev needed
@@ -172,7 +176,7 @@ $ oxit clone dropbox://orgzly/foo.org
 $ oxit cat orgzly/foo.org
 ```
 	
-###### Revert rev on dropbox.com
+###### Revert revision on dropbox.com
 * Login using web ui, look for menu right of file
 
 ##### 2-way ediff merge as fallback
