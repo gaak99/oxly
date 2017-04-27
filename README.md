@@ -111,7 +111,7 @@ auth_token=$token
    But once you do this don't make any more changes (via Emacs/Orgzly/etc) to the file as it may cause problems with the merge. See section Caveats/Gotchas below.
 	
 #### Merge revisions
-Now the 2 most recent revisions -- one each from laptop/Orgzly -- in Dropbox are ready to be merged with oxit:
+Now the 2 most recent revisions -- one each from Emacs and Orgzly -- in Dropbox are ready to be merged with oxit:
 
 1. Run oxit cmds via oxmerge script on laptop something like this:
 
@@ -231,8 +231,10 @@ PATH=/tmp/pypath:$PATH bash oxit/tests/run-tests.sh
 ```
 
 # Legalese
-## License
+## dropbox_content_hasher.py
+https://github.com/dropbox/dropbox-api-content-hasher/blob/master/License.txt
 
+## License (for everything here except dropbox_content_hasher.py)
 MIT.  See LICENSE file for full text.
 
 ## Warranty
@@ -244,6 +246,8 @@ Copyright (c) 2016 Glenn Barry (gmail: gaak99)
 
 # Refs
 <http://www.orgzly.com>
+
+<https://github.com/dropbox/dropbox-api-content-hasher.git>
 
 <https://www.gnu.org/software/emacs/manual/html_node/ediff/>
 
