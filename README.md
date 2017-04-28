@@ -3,9 +3,11 @@ oxit uses the Dropbox API to merge two Dropbox file revisions with a git-like cl
 
 So you can edit and save the same file simultaneously on two Dropbox clients (usually Emacs/laptop and Orgzly/mobile) and then later run oxit on laptop to view/diff/merge/push revisions.
 
-The `merge` cmd uses diff3(1) and will try to auto-merge. If it can't auto-merge all hunks the conflicts can be resolved by hand with Emacs' ediff-merge-with-ancestor (nice UI) or $EDITOR the diff3 output.
+oxit is most useful when you try to Orgzly `Sync` in this situation you see the "Both local and remote notebook have been modified" error msg.
 
-My use case is two Dropbox clients (Emacs/Unix, Ogzly/Android) so more/other clients not tested but maybe can be done carefully and two at a time. 
+The oxit `merge` cmd uses diff3(1) and will try to auto-merge. If it can't auto-merge all hunks the conflicts can be resolved by hand with Emacs' ediff-merge-with-ancestor (nice UI) or $EDITOR diff3-output (not so nice UI).
+
+My use case is two Dropbox clients (Emacs/Unix, Ogzly/Android) so more/other clients not tested but maybe can be done carefully and two at a time. Also see Caveats/Gotchas below.
 
 ## Status
 Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxit/issues).
@@ -46,7 +48,7 @@ The content_hash is the official Dropbox one.
 ## Merge Flow
  1. On Orgzly (when regular `Sync` fails) select `Force Save`.
 
- 2. On laptop run oxmerge (wrapper around oxit). If auto-merge (diff3(1)) does not resolve all conflicts, resolve them by hand.
+ 2. On laptop run oxmerge (wrapper around oxit). If auto-merge aka diff3(1) does not resolve all conflicts, resolve them by hand.
 
  3. On Orgzly run `Sync`.
 
@@ -246,6 +248,8 @@ Copyright (c) 2016 Glenn Barry (gmail: gaak99)
 
 # Refs
 <http://www.orgzly.com>
+
+<http://www.orgzly.com/help#Both-local-and-remote-notebook-have-been-modified>
 
 <https://github.com/dropbox/dropbox-api-content-hasher.git>
 
