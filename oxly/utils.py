@@ -1,4 +1,4 @@
-"""Utils for oxit"""
+"""Utils for oxly"""
 
 import os
 import pytz

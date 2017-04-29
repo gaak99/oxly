@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# script to automate oxit merge typical case
+# script to automate oxly merge typical case
 #   gb april17
 
 set -e
@@ -33,17 +33,17 @@ if [[ ! -d $repo ]]; then
     cd $repo
 fi
 
-oxitcmd=oxit
+oxlycmd=oxly
 nlog=5
 
-$oxitcmd --version
+$oxlycmd --version
 echo "Cloning $dbx_url into $(pwd) ..."
-$oxitcmd clone $dbx_url
+$oxlycmd clone $dbx_url
 echo "Viewing metadata latest 2 revisions (cached locally) ..."
-$oxitcmd log --oneline $fp | head -2
+$oxlycmd log --oneline $fp | head -2
 echo "Viewing metadata least latest 2 revisions (cached locally) ..."
-$oxitcmd log --oneline $fp | tail -2
+$oxlycmd log --oneline $fp | tail -2
 echo "Merging latest 2 revisions data ..."
-$oxitcmd merge $fp
+$oxlycmd merge $fp
 echo "Pushing merged revision data ..."
-$oxitcmd push --add $fp
+$oxlycmd push --add $fp

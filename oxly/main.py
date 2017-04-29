@@ -40,13 +40,13 @@ from dropbox.exceptions import ApiError, AuthError
 from .utils import make_sure_path_exists, get_relpaths_recurse, utc_to_localtz
 from .utils import calc_dropbox_content_hash
 
-USER_AGENT = 'oxit/' + __version__
-OXITDIRVERSION = "1"
-OXITSEP1 = '::'
-OXITSEP2 = ':::'
-OXITHOME = '.oxit'
-OXITMETAMETA = 'metametadb.json'
-OXITINDEX = 'index'
+USER_AGENT = 'oxly/' + __version__
+OXLYDIRVERSION = "1"
+OXLYSEP1 = '::'
+OXLYSEP2 = ':::'
+OXLYHOME = '.oxly'
+OXLYMETAMETA = 'metametadb.json'
+OXLYINDEX = 'index'
 OLDDIR = '.old'
 LOGFILENAME = 'log.txt'
 HASHREVDB = 'hashrevdb.json'
@@ -67,26 +67,26 @@ DEFAULT_MERGE3RC_CMD = MERGE_BIN + ' ' + MERGE_EVAL + ' \'('\
 DEFAULT_EDIT_CMD = 'emacsclient %s'
 DIFF3_BIN = 'diff3'
 DIFF3_BIN_ARGS = '-m'
-ANCDBNAME = '_oxit_ancestor_pickledb.json'
+ANCDBNAME = '_oxly_ancestor_pickledb.json'
 
-class Oxit():
-    """Oxit class -- use the Dropbox API to observ/merge
+class Oxly():
+    """Oxly class -- use the Dropbox API to observ/merge
           diffs of any two Dropbox file revisions
     """
-    def __init__(self, oxit_conf, oxit_repo, debug):
-        """Initialize Oxit class.
+    def __init__(self, oxly_conf, oxly_repo, debug):
+        """Initialize Oxly class.
 
-        oxit_conf:  user's conf file path
-        oxit_repo:  local copy of Dropbox file revisions data and md
+        oxly_conf:  user's conf file path
+        oxly_repo:  local copy of Dropbox file revisions data and md
         """
         self.debug = debug
-        self.repo = os.getcwd() if oxit_repo == '.' else oxit_repo 
-        self.home = OXITHOME
-        self.conf = oxit_conf
+        self.repo = os.getcwd() if oxly_repo == '.' else oxly_repo 
+        self.home = OXLYHOME
+        self.conf = oxly_conf
         self.dbx = None
-        self.mmdb_path_dir = self.repo + '/' + OXITHOME + '/.tmp'
+        self.mmdb_path_dir = self.repo + '/' + OXLYHOME + '/.tmp'
         #self.mmdb_path_dir = self._get_pname_home_base_tmp()
-        self.mmdb_path = self.mmdb_path_dir + '/oxit' + OXITSEP1 + OXITMETAMETA
+        self.mmdb_path = self.mmdb_path_dir + '/oxly' + OXLYSEP1 + OXLYMETAMETA
         if os.path.isfile(self.mmdb_path):
             self.mmdb = pickledb.load(self.mmdb_path, False)
 
@@ -97,7 +97,7 @@ class Oxit():
     def _try_dbxauth(self):
         token = self._get_conf('auth_token')
         if not token:
-            sys.exit("ERROR: auth_token not in ur oxit conf file brah")
+            sys.exit("ERROR: auth_token not in ur oxly conf file brah")
         self.dbx = dropbox.Dropbox(token, user_agent=USER_AGENT)
         try:
             self.dbx.users_get_current_account()
@@ -138,10 +138,10 @@ class Oxit():
         hrdb = pickledb.load(hrdb_path, 'False')
         with open(os.path.expanduser(log_path), "wb") as logf:
             for md in md_l:
-                logf.write('%s%s%s%s%s%s%s\n' % (md.rev, OXITSEP1,
+                logf.write('%s%s%s%s%s%s%s\n' % (md.rev, OXLYSEP1,
                                              md.server_modified,
-                                             OXITSEP1, md.size,
-                                             OXITSEP1, md.content_hash,))
+                                             OXLYSEP1, md.size,
+                                             OXLYSEP1, md.content_hash,))
                 #xxx check if key already exists??
                 hrdb.set(md.content_hash, md.rev)
             hrdb.dump()
@@ -169,9 +169,9 @@ class Oxit():
         except ApiError as err:
             if err.error.is_path() and err.error.get_path().is_not_found():
                 print('Warning: ancestor db %s not found on Dropbox.' % rem_path)
-                print('Warning: 3-way merge cant be done, try 2-way merge (see also: oxit merge2 --help)')
-                print('Warning: See also: oxit ancdb_set --help')
-                print('Warning: See also: oxit ancdb_push --help')
+                print('Warning: 3-way merge cant be done, try 2-way merge (see also: oxly merge2 --help)')
+                print('Warning: See also: oxly ancdb_set --help')
+                print('Warning: See also: oxly ancdb_push --help')
                 sys.exit(1)
             else:
                 print('Call to Dropbox to download ancestor db data failed: %s'
@@ -197,8 +197,8 @@ class Oxit():
     #
 
     def _get_pname_index(self):
-        return self._get_pname_home_base_tmp() + '/' + 'oxit'\
-            + OXITSEP1 + OXITINDEX
+        return self._get_pname_home_base_tmp() + '/' + 'oxly'\
+            + OXLYSEP1 + OXLYINDEX
 
     def _get_pname_index_path(self, path):
         return self._get_pname_index() + '/' + path
@@ -219,13 +219,13 @@ class Oxit():
         if r == 'head':
             logs = self._get_log(path)
             h = logs[0]
-            (rev, date, size, content_hash) = h.split(OXITSEP1)
+            (rev, date, size, content_hash) = h.split(OXLYSEP1)
         elif r == 'headminus1':
             logs = self._get_log(path)
             if len(logs) == 1:
                 sys.exit('warning: only one rev so far so no headminus1')
             h = logs[1]
-            (rev, date, size, content_hash) = h.split(OXITSEP1)
+            (rev, date, size, content_hash) = h.split(OXLYSEP1)
         return rev
 
     def _get_pname_by_rev(self, path, rev='head'):
@@ -247,15 +247,15 @@ class Oxit():
 
     #xxx
     def OLD_get_pname_mmpath(self):
-        mm_path = self._get_pname_home_base() + '/.oxit'\
-                  + OXITSEP1 + OXITMETAMETA
+        mm_path = self._get_pname_home_base() + '/.oxly'\
+                  + OXLYSEP1 + OXLYMETAMETA
         return os.path.expanduser(mm_path)
 
     def _get_pname_home_revsdir(self, path):
         base_path = self._get_pname_home_base()
         path_dir = os.path.dirname(path)
         path_f = os.path.basename(path)
-        return base_path + '/' + path_dir + '/.oxit' + OXITSEP1 + path_f
+        return base_path + '/' + path_dir + '/.oxly' + OXLYSEP1 + path_f
 
     def _get_pname_home_base(self):
         return self.repo + '/' + self.home
@@ -264,14 +264,14 @@ class Oxit():
         return self._get_pname_home_base() + '/.tmp'
     
     def _get_pname_home_paths(self):
-        path = self._get_pname_home_base_tmp() + '/oxit' + OXITSEP1 + 'filepaths'
+        path = self._get_pname_home_base_tmp() + '/oxly' + OXLYSEP1 + 'filepaths'
         return os.path.expanduser(path)
 
     def _get_pname_by_wdrev(self, path, rev):
         if rev == 'head' or rev == 'headminus1':
             rev = self._head2rev(path, rev)
 
-        return self._get_pname_wt_path(path) + OXITSEP1 + rev
+        return self._get_pname_wt_path(path) + OXLYSEP1 + rev
 
     def _get_pname_wdrev_ln(self, path, rev, suffix=''):
         """Return linked file path of rev::suffix in wd.
@@ -330,7 +330,7 @@ class Oxit():
         return wt, ind, head
 
     def checkout(self, filepath):
-        """Checkout/copy file from .oxit/ to working dir (wd).
+        """Checkout/copy file from .oxly/ to working dir (wd).
 
         if staged version exists revert wd one to it instead.
         """
@@ -388,7 +388,7 @@ class Oxit():
     def clone(self, dry_run, src_url, nrevs, init_ancdb, dl_ancdb=True):
         """Given a dropbox url for one file*, fetch the
         n revisions of the file and store locally in repo's
-        .oxit dir and checkout HEAD to working dir.
+        .oxly dir and checkout HEAD to working dir.
         *current limit -- might be expanded
         """
         nrevs = int(nrevs)
@@ -455,15 +455,15 @@ class Oxit():
                 anchash = ancdb.get(filepath.strip('/'))
                 if anchash == None:
                     print('Warning: ancestor hash and rev not found: clone anchash==None')
-                    print('Warning: 3-way merge cant be done, maybe try 2-way merge (oxit merge2 --help)')
-                    print('Warning: to init the ancdb for this file run; oxit ancdb_set %s' % filepath.strip('/'))
-                    print('Warning: then run; oxit ancdb_push')
+                    print('Warning: 3-way merge cant be done, maybe try 2-way merge (oxly merge2 --help)')
+                    print('Warning: to init the ancdb for this file run; oxly ancdb_set %s' % filepath.strip('/'))
+                    print('Warning: then run; oxly ancdb_push')
                     sys.exit(1)
                 rev = self._hash2rev(filepath, anchash)
                 if rev == None:
                     print('Warning: ancestor rev not found in local metadata cache.  Try clone with higher nrevs.')
-                    print('Warning: try; oxit clone --nrevs %d %s' % (nrevs+50, src_url))
-                    print('Warning: if that succeeds, you can rerun oxmerge or continue with oxit merge.')
+                    print('Warning: try; oxly clone --nrevs %d %s' % (nrevs+50, src_url))
+                    print('Warning: if that succeeds, you can rerun oxmerge or continue with oxly merge.')
                     sys.exit(1)
                 print('Checking ancestor rev data ...')
                 self.pull(rev, filepath)
@@ -509,7 +509,7 @@ class Oxit():
         return get_relpaths_recurse(wt_dir)
 
     def _scrub_fnames(self, fp_l):
-        ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxit'), fp_l)
+        ifp_l = itertools.ifilterfalse(lambda x: x.startswith('.oxly'), fp_l)
         if not ifp_l:
             return None
         # emacs prev version
@@ -644,7 +644,7 @@ class Oxit():
         fp = self._wd_or_index(rev, filepath)
         fp = fp if fp else self._get_pname_by_rev(filepath, rev)
         if not os.path.isfile(fp):
-            sys.exit('Warning: rev data is not local. Pls run: oxit pull --rev %s %s'
+            sys.exit('Warning: rev data is not local. Pls run: oxly pull --rev %s %s'
                      % (rev, filepath))
 
     def _cat_one_path(self, cat_cmd, rev, filepath):
@@ -656,7 +656,7 @@ class Oxit():
         try:
             shcmd = cat_cmd % (fp)
         except TypeError:
-            sys.exit('cat cat-cmd bad format. Try: oxit cat --help')
+            sys.exit('cat cat-cmd bad format. Try: oxly cat --help')
         self._debug('debug _cat_one_path: %s' % shcmd)
         os.system(shcmd)
             
@@ -685,7 +685,7 @@ class Oxit():
     def _open_ancdb(self):
         ancdb_path = self.repo + '/' + self.mmdb.get('ancdb_path')
         if not ancdb_path:
-            print('Error: ancestor db not found. Was oxit clone run?')
+            print('Error: ancestor db not found. Was oxly clone run?')
             sys.exit(1)
         return pickledb.load(ancdb_path, 'False')
 
@@ -732,21 +732,21 @@ class Oxit():
         hash = ancdb.get(filepath)
         if hash == None:
             print('Warning hash==None: cant do a 3-way merge as ancestor revision not found.')
-            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+            sys.exit('Warning: you can still do a 2-way merge (oxly merge2 --help).')
         anc_rev = self._hash2rev(filepath, hash)
         if anc_rev == None: #not enough revs downloaded 
             print('Warning ancrev==None: cant do a 3-way merge as no ancestor revision found.')
-            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+            sys.exit('Warning: you can still do a 2-way merge (oxly merge2 --help).')
             sys.exit(1)
 
         if reva == anc_rev:
             print('Warning: reva %s == anc_rev %s' % (reva, anc_rev))
             print('Warning: does not look like a merge is necessary. Try Sync on Orgzly.')
-            sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
+            sys.exit('Warning: you can still do a 2-way merge if necessary (oxly merge2 --help).')
         if revb == anc_rev:
             print('Warning: revb %s == anc_rev %s' % (revb, anc_rev))
             print('Warning: does not look like a merge is necessary, try Sync on Orgzly.')
-            sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
+            sys.exit('Warning: you can still do a 2-way merge if necessary (oxly merge2 --help).')
             sys.exit(1)
         f_anc = self._get_pname_wdrev_ln(filepath, anc_rev, suffix=':ANCESTOR')
         mcmd = margs = None
@@ -760,7 +760,7 @@ class Oxit():
         self._debug('debug merge3: cmd3=%s' % cmd3)
         if dry_run:
             print('merge3 dry-run: %s' % cmd3)
-        tmpf = '/tmp/tmpoxitmerge3.' + str(os.getpid())
+        tmpf = '/tmp/tmpoxlymerge3.' + str(os.getpid())
         fname = '/dev/null' if dry_run else tmpf
         with open(fname, 'w') as fout:
             rt = sp.call(cmd3, stdout=fout)
@@ -777,11 +777,11 @@ class Oxit():
                 fcon = filepath + ':CONFLICT'
                 os.system('mv %s %s' % (fname, fcon))
                 print('Conflicts found, pls run either ...')
-                print('\temacsclient ediff 3-way merge: oxit mergerc --reva %s --revb %s %s' % (reva, revb, filepath))
-                print('\t\t then run: oxit push --add %s' % (filepath))
+                print('\temacsclient ediff 3-way merge: oxly mergerc --reva %s --revb %s %s' % (reva, revb, filepath))
+                print('\t\t then run: oxly push --add %s' % (filepath))
                 print('\tedit diff3 output: $EDITOR %s' % (fcon))
                 print('\t\t then run: mv %s %s' % (fcon, filepath))
-                print('\t\t then run: oxit push --add %s' % (filepath))
+                print('\t\t then run: oxly push --add %s' % (filepath))
             sys.exit(rt)
             
     def merge3_rc(self, dry_run, emacsclient_path, mergerc_cmd, reva, revb, filepath):
@@ -798,21 +798,21 @@ class Oxit():
         hash = ancdb.get(filepath)
         if hash == None:
             print('Warning hash==None: cant do a 3-way merge as ancestor revision not found.')
-            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+            sys.exit('Warning: you can still do a 2-way merge (oxly merge2 --help).')
         anc_rev = self._hash2rev(filepath, hash)
         if anc_rev == None: #not enough revs downloaded 
             print('Warning ancrev==None: cant do a 3-way merge as no ancestor revision found.')
-            sys.exit('Warning: you can still do a 2-way merge (oxit merge2 --help).')
+            sys.exit('Warning: you can still do a 2-way merge (oxly merge2 --help).')
             sys.exit(1)
 
         if reva == anc_rev:
             print('Warning: reva %s == anc_rev %s' % (reva, anc_rev))
             print('Warning: does not look like a merge is necessary. Try Sync on Orgzly.')
-            sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
+            sys.exit('Warning: you can still do a 2-way merge if necessary (oxly merge2 --help).')
         if revb == anc_rev:
             print('Warning: revb %s == anc_rev %s' % (revb, anc_rev))
             print('Warning: does not look like a merge is necessary, try Sync on Orgzly.')
-            sys.exit('Warning: you can still do a 2-way merge if necessary (oxit merge2 --help).')
+            sys.exit('Warning: you can still do a 2-way merge if necessary (oxly merge2 --help).')
             sys.exit(1)
         f_anc = self._get_pname_wdrev_ln(filepath, anc_rev, suffix=':ANCESTOR')
         qs = lambda(s): '\"' + s + '\"'
@@ -863,7 +863,7 @@ class Oxit():
         os.system(shcmd)
 
     def init(self):
-        """Initialize local repo .oxit dir"""
+        """Initialize local repo .oxly dir"""
         base_path = self._get_pname_home_base()
         if os.path.isdir(base_path) or os.path.isfile(base_path):
             self._save_repo()
@@ -871,21 +871,21 @@ class Oxit():
         make_sure_path_exists(base_path)
 
         # mmdb one per repo
-        #self.mmdb_path_dir = self.repo + '/' + OXITHOME + '/.tmp'
+        #self.mmdb_path_dir = self.repo + '/' + OXLYHOME + '/.tmp'
         self.mmdb_path_dir = self._get_pname_home_base_tmp()
         make_sure_path_exists(self.mmdb_path_dir)
-        self.mmdb_path = self.mmdb_path_dir + '/oxit' + OXITSEP1 + OXITMETAMETA
+        self.mmdb_path = self.mmdb_path_dir + '/oxly' + OXLYSEP1 + OXLYMETAMETA
         self.mmdb = pickledb.load(self.mmdb_path, False)
             
         self._debug('debug init: set basic vars in mmdb')
         self.mmdb.set('version', __version__)
-        self.mmdb.set('home_version', OXITDIRVERSION)
+        self.mmdb.set('home_version', OXLYDIRVERSION)
         self.mmdb.set('repo_local', self.repo)
         self.mmdb.dump()
 
     def _get_log(self, path):
         self._debug('debug _get_log start %s' % path)
-        # on disk '$fileOXITSEP2log':
+        # on disk '$fileOXLYSEP2log':
         #   $rev||$date||$size
         log_path = self._get_pname_logpath(path)
         self._debug('debug _get_log `%s`' % log_path)
@@ -897,18 +897,18 @@ class Oxit():
         return content
 
     def _log_one_path(self, oneline, path):
-        # on disk '$fileOXITSEP2log':
+        # on disk '$fileOXLYSEP2log':
         #   $rev $date $size $hash
         logs = self._get_log(path)
         if oneline:
             for l in logs:
-                (rev, date, size, content_hash) = l.split(OXITSEP1)
+                (rev, date, size, content_hash) = l.split(OXLYSEP1)
                 print('%s\t%s\t%s\t%s' % (rev, size.rstrip(),
                                           utc_to_localtz(date),
                                           content_hash[:8]))
         else:
             for l in logs:
-                (rev, date, size, content_hash) = l.split(OXITSEP1)
+                (rev, date, size, content_hash) = l.split(OXLYSEP1)
                 print('Revision:  %s' % rev)
                 print('Size (bytes):  %s' % size.rstrip())
                 print('Server modified:  %s' % utc_to_localtz(date))
@@ -936,7 +936,7 @@ class Oxit():
         # Skip if no change from current rev
         logs = self._get_log(path)
         head = logs[0]
-        (rev, date, size, hash) = head.split(OXITSEP1)
+        (rev, date, size, hash) = head.split(OXLYSEP1)
         head_path = self._get_pname_by_rev(path, rev)
         if filecmp.cmp(index_path, head_path):
             print('Warning: no change between working dir version and HEAD (latest version cloned).')
@@ -969,7 +969,7 @@ class Oxit():
     def _push_ancestor_db(self):
         ancdb_path = self.mmdb.get('ancdb_path')  # *ass*ume relative to repo
         if not ancdb_path:
-            print('Error: ancestor db not found. Was oxit clone run?')
+            print('Error: ancestor db not found. Was oxly clone run?')
             sys.exit(1)
         rem_path = '/' + ancdb_path
         ancdb_fp = self.repo + '/' + ancdb_path # full path
@@ -985,14 +985,14 @@ class Oxit():
                         err.error.get_path().error.is_insufficient_space()):
                     print("ERROR: Cannot upload; insufficient space.")
                     print('When problem resolved, try:')
-                    print('\noxit ancdb_push')
+                    print('\noxly ancdb_push')
                     print("Then select Sync (regular, Forced not neccessary) note on Orgzly now.")
                     print("It should be done before any other changes are saved to this file on Dropbox.")
                     sys.exit(1)
                 elif err.user_message_text:
                     print(err.user_message_text)
                     print('When problem resolved, try:')
-                    print('\noxit ancdb_push')
+                    print('\noxly ancdb_push')
                     print("Then select Sync (regular, Forced not neccessary) note on Orgzly now.")
                     print("It should be done before any other changes are saved to this file on Dropbox.")
                     sys.exit(1)
@@ -1067,12 +1067,12 @@ class Oxit():
         print("It should be done before any other changes are saved to this file on Dropbox/Emacs/Orgzly.")
 
     def _save_repo(self):
-        # Save current .oxit/.tmp (includes index dir, maybe for recovery?).
+        # Save current .oxly/.tmp (includes index dir, maybe for recovery?).
         # This will save/clear repo metmaeta but not per file
         # revs data/revhashdb/etc which we like to persist between clones.
         src = self._get_pname_home_base_tmp()
         if os.path.isdir(src):
-            dest = self._get_pname_home_base() + '/' + OLDDIR + '/oxittmp.' + str(os.getpid())
+            dest = self._get_pname_home_base() + '/' + OLDDIR + '/oxlytmp.' + str(os.getpid())
             make_sure_path_exists(dest)
             print('Moving/saving old %s to %s ...'
                   % (src, dest), end='')
@@ -1085,6 +1085,6 @@ class Oxit():
         return self.mmdb.get(key)
 
     def getmm(self, key):
-        """Fetch internal oxit sys file vars -- mostly for debug"""
+        """Fetch internal oxly sys file vars -- mostly for debug"""
         print('%s=%s' % (key, self._get_mmval(key)))
 
