@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='oxly',
     description='oxly - merge diffs in Emacs/Dropbox/Orgzly file revisions',
-    version='0.10.0',
+    version='0.10.1',
     packages=find_packages(),
     include_package_data=True,
     install_requires=[

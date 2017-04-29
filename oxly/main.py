@@ -159,15 +159,18 @@ class Oxly():
             sys.exit(1)
 
     @_dbxauth
-    def _download_ancdb(self, ancdb_path):
+    def _download_ancdb(self, ancdb_path, init_ancdb):
         self._debug('_download_ancdb: ancdb_path %s' % ancdb_path)
         ancdb_fp = self.repo + '/' + ancdb_path # full path
         rem_path = '/'+ancdb_path
         try:
             self.dbx.files_download_to_file(ancdb_fp, rem_path)
-
+            return True
         except ApiError as err:
             if err.error.is_path() and err.error.get_path().is_not_found():
+                if init_ancdb:
+                    print(' ancestor db not on Dropbox yet so it will be created.')
+                    return False
                 print('Warning: ancestor db %s not found on Dropbox.' % rem_path)
                 print('Warning: 3-way merge cant be done, try 2-way merge (see also: oxly merge2 --help)')
                 print('Warning: See also: oxly ancdb_set --help')
@@ -443,8 +446,9 @@ class Oxly():
                 print(' already downloaded.')
             else:
                 print('\n\tDownloading ancestor db ...', end='')
-                self._download_ancdb(ancdb_path)
-                print(' done.')
+                rt = self._download_ancdb(ancdb_path, init_ancdb)
+                if rt:
+                    print(' done.')
             if init_ancdb:
                 self._debug('clone: init_ancdb True')
                 self.ancdb_set(filepath.strip('/'))
