@@ -121,11 +121,24 @@ class Oxly():
 
     def _dbxmd_get_hash(self, filepath):
         md_l = self._get_revs_md(filepath, 1)
+        if md_l == None or len(md_l) == 0:
+            self._debug('debug: _dbxmd_get_hash md_l ghostfile maybe %s' % md_l)
+            return None
         return md_l[0].content_hash
 
     def _dbx_feq(self, filepath):
         lhash = calc_dropbox_content_hash(filepath)
         rhash = self._dbxmd_get_hash('/'+filepath)
+        if rhash == None:
+            print('Warning: ancestor hash db not on Dropbox')
+            print('Warning: 3-way merge cant be done now, try one of these methods;')
+            print('Warning: \toxly merge2 <file/path> # 2-way merge')
+            print('Warning: \toxly push --add <file/path>')
+            print('Warning: or if no merge needed now;')
+            print('Warning: \toxly ancdb_set <file/path>')
+            print('Warning: \toxly ancdb_push')
+            sys.exit(1)
+
         if lhash == rhash:
             return True
         return False
@@ -187,6 +200,7 @@ class Oxly():
             
     @_dbxauth
     def _get_revs_md(self, path, nrevs):
+        self._debug('debug: _get_revs_md %s, %d' % (path, nrevs))
         try:
             revs = sorted(self.dbx.files_list_revisions(path,
                                                         limit=nrevs).entries,
@@ -194,6 +208,8 @@ class Oxly():
                           reverse=True)
         except Exception as err:
             sys.exit('Call to Dropbox to list file revisions failed: %s' % err)
+        if not revs:
+            self._debug('debug: _get_revs_md rt not')
         return revs
 
     # Start get_pname internal api
