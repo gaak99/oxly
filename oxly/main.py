@@ -459,9 +459,9 @@ class Oxly():
                 anchash = ancdb.get(filepath.strip('/'))
                 if anchash == None:
                     print('Warning: ancestor hash and rev not found: clone anchash==None')
-                    print('Warning: 3-way merge cant be done, maybe try 2-way merge (oxly merge2 --help)')
-                    print('Warning: to init the ancdb for this file run; oxly ancdb_set %s' % filepath.strip('/'))
-                    print('Warning: then run; oxly ancdb_push')
+                    print('Warning: 3-way merge cant be done now, to merge by hand w/emacsclient ediff and reset ancestor db:')
+                    print('Warning: \toxly merge2 %s' % filepath.strip('/'))
+                    print('Warning: \toxly push --add %s' % filepath.strip('/'))
                     sys.exit(1)
                 rev = self._hash2rev(filepath, anchash)
                 if rev == None:

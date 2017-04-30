@@ -1,5 +1,5 @@
 # Intro
-oxly uses the Dropbox API to merge two Dropbox file revisions with a git-like cli.
+oxly uses the Dropbox API to auto-merge Orgzly/Emacs/Dropbox file revisions with a git-like cli.
 
 So you can edit and save the same file simultaneously on two Dropbox clients (usually Emacs/laptop and Orgzly/mobile) and then later run oxly on laptop to view/diff/merge/push revisions.
 
@@ -164,10 +164,24 @@ It should be done before any other changes are saved to this file on Dropbox/Ema
 ##### Careful no file locking!
 * For a succesful merge, once the oxly merge process (aka 2 latest revisions downloaded) begins the user needs to be careful and not change the file anymore outside of the process (until process completes). A lock of the file would be useful here but I don't see it in the Dropbox v2 api.
 
-##### Revert revision as fallback
+### Troubleshooting
+
+#### ancdb problems
+
+##### File key/hash not found
+If the file/hash key not found in ancdb or hash seems incorrect you can't do usual `merge` but we can 2-way `merge2`and reset the file/hash key:
+
+```bash
+# Note this assumes last Emacs and last Orgzly versions are current/current-1 revs in Dropbox.
+# If not, see `log` cmd and use --rev `merge2` options.
+$ oxly merge2 orgzly/foo.org # merge by hand w/emacsclient
+$ oxly push --add orgzly/foo.org # will reset ancdb
+```
+
+#### Revert revision as fallback
 * If a mismerge is saved you can easily revert to the revision you want using oxly or the Dropbox.com site.
 
-###### Revert revision using oxly
+##### Revert revision using oxly
 
 ```bash
 $ oxly log --oneline orgzly/foo.org #find rev needed
@@ -178,12 +192,8 @@ $ oxly clone dropbox://orgzly/foo.org
 $ oxly cat orgzly/foo.org
 ```
 	
-###### Revert revision on dropbox.com
+##### Revert revision on dropbox.com
 * Login using web ui, look for menu right of file
-
-##### 2-way ediff merge as fallback
-* `oxly merge2` will do a 2-way merge -- no ancestor involved so no auto-merge -- which might be handy if the ancdb is not set correctly. Also note it can be done on any two revisions, see `oxly merge2 --help`
-
 
 ### Tips/Tricks
 
