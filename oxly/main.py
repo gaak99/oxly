@@ -162,7 +162,7 @@ class Oxly():
                     return False
                 print('Warning: ancestor db %s not found on Dropbox.' % rem_path)
                 print('Warning: did you run \'oxly clone --init-ancdb url\' once to init this file?')
-                print('Warning: See README.md doc for full oxly process.'
+                print('Warning: See README.md doc for full oxly process.')
                 sys.exit(1)
             else:
                 print('Call to Dropbox to download ancestor db data failed: %s' % err)
