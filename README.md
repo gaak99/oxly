@@ -161,8 +161,15 @@ It should be done before any other changes are saved to this file on Dropbox/Ema
 
 ### Caveats/Gotchas
 
-##### Careful no file locking!
-* For a succesful merge, once the oxly merge process (aka 2 latest revisions downloaded) begins the user needs to be careful and not change the file anymore outside of the process (until process completes). A lock of the file would be useful here but I don't see it in the Dropbox v2 api.
+##### One `oxmerge url` at a time
+* Currently it's only fully safe to oxmerge (oxit clone/merge/push) one file at a time. Some consistency checks are done and more planned but maynot remove all data races and such.
+
+
+######  no data file locking
+* For a succesful merge, once the oxmerge process (aka 2 latest revisions downloaded) begins the user needs to be careful and not change the file anymore outside of the process (until process completes). A lock of the file would be useful here but I don't see it in the Dropbox v2 api (NFS Lock Mgr come back ALL IS FORGIVEN)
+
+###### no ancdb locking
+* Thus as mentioned above to be safe only start/complete one oxmerge url at a time.
 
 ### Troubleshooting
 
@@ -170,23 +177,31 @@ It should be done before any other changes are saved to this file on Dropbox/Ema
 
 ##### File key/hash not found
 If the file/hash key not found in ancdb or hash seems incorrect you can't do usual `merge` but we can 2-way `merge2`and reset the file/hash key:
-
 ```bash
-# Note this assumes last Emacs and last Orgzly versions are current/current-1 revs in Dropbox.
+# Note this assumes last Orgzly/Orgzly versions are current/current-1 revs in Dropbox.
 # If not, see `log` cmd and use --rev `merge2` options.
+$ oxly clone dropbox://orgzly/foo.org # get latest ancdb
 $ oxly merge2 orgzly/foo.org # merge by hand w/emacsclient
 $ oxly push --add orgzly/foo.org # will reset ancdb
 ```
 
+or if you don't need to merge now but want to reset ancdb for this file:
+```bash
+$ oxly clone dropbox://orgzly/foo.org # get latest ancdb
+$ oxly ancdb_set orgzly/foo.org
+$ oxly ancdb_push
+```
+
 #### Revert revision as fallback
-* If a mismerge is saved you can easily revert to the revision you want using oxly or the Dropbox.com site.
+* If a mismerge is saved you can easily revert to the revision you want using oxly or the Dropbox.com site UI.
 
 ##### Revert revision using oxly
-
 ```bash
+$ oxly clone dropbox://orgzly/foo.org
 $ oxly log --oneline orgzly/foo.org #find rev needed
+# oxly cat and diff handy here
 $ oxly cat --rev $rev orgzly/foo.org > orgzly/foo.org
-$ oxly push --no-dry-run orgzly/foo.org
+$ oxly push --no-dry-run --add orgzly/foo.org
 # view/check it
 $ oxly clone dropbox://orgzly/foo.org
 $ oxly cat orgzly/foo.org
@@ -203,7 +218,7 @@ $ oxly cat orgzly/foo.org
 * See `oxly cmd --help`.
 
 ##### Tips for a clean -- no conflicts are a wonderful thang -- merge
-* I have a misc notes file I slang url's and ideas to several times a day on Emacs and Orgzly and oxmerge once a day. And I'm mostly adding new (org top level) entries and much less changing older ones. To get a better chance of a clean (auto) merge I usually append note entries on Orgzly and prepend (below org TITLE header(s)) on Emacs. Also on Emacs I make sure the body of the note added has a empty line before and after as Orgzly likes it that way. So when Orgzly later groks it no changes are done that many result in an anoying dirty merge.
+* I have a misc notes file I slang url's and ideas to several times a day on Emacs and Orgzly and oxmerge once a day. And I'm mostly adding new (org top level) entries and much less changing older ones. To get a better chance of a clean (auto) merge I usually append note entries on Orgzly and prepend (below org TITLE header(s)) on Emacs. Also on Emacs I make sure the body of the note added has a empty line before and after as Orgzly likes it that way. So when Orgzly later groks it no changes are done that many result in an annoying dirty merge.
 
 #### Using ediff
 * ediff skillz def a plus here. But if you are not currently used to using ediff then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- but very useful Emacs app.

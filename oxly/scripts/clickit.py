@@ -183,10 +183,11 @@ def ancdb_set(oxly, filepath):
 def ancdb_get(oxly, filepath):
     oxly.ancdb_get(filepath)
 
-@cli.command(help='Push/upload ancestor db to Dropbox.')
+@cli.command(help='Calc/Set dropbox hash in local ancestor db and upload ancestor db to Dropbox.')
+@click.argument('filepath')
 @click.pass_obj
-def ancdb_push(oxly):
-    oxly.ancdb_push()
+def ancdb_push(oxly, filepath):
+    oxly.ancdb_push(filepath)
 
 @cli.command(help='Run cat(1) to display to stdout the data of a revision.')
 @click.option('--cat-cmd', required=False,

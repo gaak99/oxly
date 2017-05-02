@@ -119,30 +119,6 @@ class Oxly():
             return fn(*args, **kwargs)
         return dbxauth
 
-    def _dbxmd_get_hash(self, filepath):
-        md_l = self._get_revs_md(filepath, 1)
-        if md_l == None or len(md_l) == 0:
-            self._debug('debug: _dbxmd_get_hash md_l ghostfile maybe %s' % md_l)
-            return None
-        return md_l[0].content_hash
-
-    def _dbx_feq(self, filepath):
-        lhash = calc_dropbox_content_hash(filepath)
-        rhash = self._dbxmd_get_hash('/'+filepath)
-        if rhash == None:
-            print('Warning: ancestor hash db not on Dropbox')
-            print('Warning: 3-way merge cant be done now, try one of these methods;')
-            print('Warning: \toxly merge2 <file/path> # 2-way merge')
-            print('Warning: \toxly push --add <file/path>')
-            print('Warning: or if no merge needed now;')
-            print('Warning: \toxly ancdb_set <file/path>')
-            print('Warning: \toxly ancdb_push')
-            sys.exit(1)
-
-        if lhash == rhash:
-            return True
-        return False
-    
     def _log_revs_md(self, md_l, log_path, hrdb_path):
         self._debug('_log_revs_md %s %s' % (len(md_l), log_path))
         if os.path.isfile(log_path):
@@ -182,12 +158,11 @@ class Oxly():
         except ApiError as err:
             if err.error.is_path() and err.error.get_path().is_not_found():
                 if init_ancdb:
-                    print(' ancestor db not on Dropbox yet so it will be created.')
+                    print(' ancestor db not on Dropbox yet so it will be created ...')
                     return False
                 print('Warning: ancestor db %s not found on Dropbox.' % rem_path)
-                print('Warning: 3-way merge cant be done, try 2-way merge (see also: oxly merge2 --help)')
-                print('Warning: See also: oxly ancdb_set --help')
-                print('Warning: See also: oxly ancdb_push --help')
+                print('Warning: did you run \'oxly clone --init-ancdb url\' once to init this file?')
+                print('Warning: See README.md doc for full oxly process.'
                 sys.exit(1)
             else:
                 print('Call to Dropbox to download ancestor db data failed: %s'
@@ -456,19 +431,15 @@ class Oxly():
             print('\tonly one revision found.')
         self.checkout(filepath)
         if dl_ancdb:
-            print('Checking ancestor db ...', end='')
-            ancdb_path = self.mmdb.get('ancdb_path')
-            if os.path.isfile(ancdb_path) and self._dbx_feq(ancdb_path):
-                print(' already downloaded.')
-            else:
-                print('\n\tDownloading ancestor db ...', end='')
-                rt = self._download_ancdb(ancdb_path, init_ancdb)
-                if rt:
-                    print(' done.')
+            print('Downloading ancestor db ...', end='')
+            rt = self._download_ancdb(self.mmdb.get('ancdb_path'),
+                                      init_ancdb)
+            if rt:
+                print(' done.')
             if init_ancdb:
                 self._debug('clone: init_ancdb True')
                 self.ancdb_set(filepath.strip('/'))
-                self.ancdb_push()
+                self._ancdb_pushit()
             else:
                 self._debug('clone: init_ancdb False')
                 ancdb = self._open_ancdb()
@@ -481,7 +452,8 @@ class Oxly():
                     sys.exit(1)
                 rev = self._hash2rev(filepath, anchash)
                 if rev == None:
-                    print('Warning: ancestor rev not found in local metadata cache.  Try clone with higher nrevs.')
+                    print('Warning: ancestor rev not found in local metadata cache; anchash=%s' % anchash[:8])
+                    print('Warning: Try clone with higher nrevs.')
                     print('Warning: try; oxly clone --nrevs %d %s' % (nrevs+50, src_url))
                     print('Warning: if that succeeds, you can rerun oxmerge or continue with oxly merge.')
                     sys.exit(1)
@@ -720,7 +692,7 @@ class Oxly():
         ancdb.set(filepath, hash)
         ancdb.dump()
         return hash
-    
+
     def ancdb_set(self, filepath):
         hash = self._set_ancdb(filepath)
         print('Dropbox file content_hash %s added to ancestor db locally.' % hash[:8])
@@ -729,8 +701,18 @@ class Oxly():
         ancdb = self._open_ancdb()
         print('%s' %  ancdb.get(filepath))
 
-    def ancdb_push(self):
+    def _ancdb_pushit(self):
         self._push_ancestor_db()
+        
+    def ancdb_push(self, filepath): # --set
+        # lockmemaybe upstream
+        print('Downloading latest ancestor db ...', end='')
+        rt = self._download_ancdb(self.mmdb.get('ancdb_path'), True)
+        if rt:
+            print(' done.')
+        self.ancdb_set(filepath)
+        self._ancdb_pushit()
+        # unlockmemaybe upstream
         
     def calc_dropbox_hash(self, filepath):
         """Calculate/display the Dropbox files metadata content_hash of the version in the working dir.
@@ -994,7 +976,7 @@ class Oxly():
         rem_path = '/' + ancdb_path
         ancdb_fp = self.repo + '/' + ancdb_path # full path
         with open(ancdb_fp, 'rb') as f:
-            print("Uploading ancestor db " + ancdb_path + " to Dropbox ...", end='')
+            print("Uploading ancestor db to Dropbox as " + '/' + ancdb_path + " ...", end='')
             try:
                 self.dbx.files_upload(f.read(), rem_path, mode=WriteMode('overwrite'))
                 print(' done.')
@@ -1038,9 +1020,9 @@ class Oxly():
         if filepath:
             if filepath not in [s.strip('./') for s in fp_l]:
                 if filepath.startswith('dropbox:'):
-                    print('Error: file should be local path not url')
+                    print('Warning: file should be local path not url')
                 if not add:
-                    sys.exit('Error: %s not in index' % filepath)
+                    sys.exit('Warning: %s not in index. Try push --add.' % filepath)
             if dry_run:
                 print('push dryrun add: %s' % add)
                 print('push dryrun filepath: %s' % filepath)
@@ -1051,9 +1033,8 @@ class Oxly():
                 if add:
                     self._add_one_path(filepath)
                 self._push_one_path(filepath)
-                hash = self._set_ancdb(filepath)
-                if hash:
-                    self._push_ancestor_db()
+                print('Running ancdb_push ...') # in case it fails, user can rerun it
+                self.ancdb_push(filepath)
         else:
             if not fp_l:
                 print('Nothing to push')
@@ -1068,9 +1049,8 @@ class Oxly():
                 else:
                     if add:
                         self._add_one_path(filepath)
-                    hash = self._push_one_path(p)
-                    if hash:
-                        self._push_ancestor_db(filepath, hash)
+                    print('Running ancdb_push ...') # in case it fails, user can rerun it
+                    self.ancdb_push(filepath)
 
         if dry_run:
             return
