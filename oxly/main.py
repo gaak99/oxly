@@ -165,8 +165,7 @@ class Oxly():
                 print('Warning: See README.md doc for full oxly process.'
                 sys.exit(1)
             else:
-                print('Call to Dropbox to download ancestor db data failed: %s'
-                         % err)
+                print('Call to Dropbox to download ancestor db data failed: %s' % err)
                 sys.exit(1)
         except Exception as err:
             print('Call to Dropbox to download ancestor db data failed: %s'
