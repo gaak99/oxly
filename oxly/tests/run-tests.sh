@@ -1,18 +1,30 @@
 
+set -e # exit on error
+
 sh_debug="" #"-x"
-dbxpath="$HOME/Dropbox"
+#sh_debug="-x"
+dbxhome="$HOME/Dropbox"
 
 subsh_debug='--no-debug'
 
-tests_path=oxit/tests/oxit-test-basic.sh
+tests_path=oxly/tests/oxly-test-basic.sh
 
 # top level dbx file
-fname=oxit-testf.txt
-orgzly_dir=oxit-testmedir
-path=$orgzly_dir/$fname
-touch $dbxpath/$path
-date >> $dbxpath/$path
-repo=/tmp/test-oxit$RANDOM
+fname=oxly-testf.txt
+orgzly_dir=oxly-testmedir
+td=td${RANDOM}
+#i said top yo path=$orgzly_dir/$td
+path=$orgzly_dir
+
+dbxpath=$dbxhome/$path
+mkdir -p $dbxpath
+sleep 2 #syncmemaybe
+
+path=$path/$fname
+
+date >> $dbxpath/$fname
+repo=/tmp/test-oxly$RANDOM
+sleep 5 #syncmemaybe
 bash $sh_debug $tests_path 'top level orgzly_dir/file' $repo $path $subsh_debug
 #exit 99 #tmp
 
@@ -21,11 +33,13 @@ echo '======================================================================'
 echo
 
 # file within dbx sub folders
-path=oxit-testmedir/testdir2/mytest.txt
+path=oxly-testmedir/$td/dir1/dir2/testdir2mytest.txt
 dir=$(dirname $path)
-mkdir -p $dbxpath/$dir
+mkdir -p $dbxhome/$dir
 
-touch $dbxpath/$path
-date >> $dbxpath/$path
-repo=/tmp/test-oxit$RANDOM
+date >> $dbxhome/$path
+sleep 5 #syncmemaybe
+repo=/tmp/test-oxly$RANDOM
 bash $sh_debug $tests_path 'file within subfolders' $repo $path $subsh_debug
+
+#rm-me-maybe-dir $dbxox

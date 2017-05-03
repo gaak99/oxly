@@ -1,9 +1,11 @@
 
-### oxit basic sh test
+### oxly basic sh test
 ###
 ### Notes:
-###   1) valid auth token needed in oxit conf file
+###   1) valid auth token needed in oxly conf file
 ###   2) it will creat test files/dirs in ~/Dropbox
+
+set -e # exit on error
 
 if [[ $# != 4 ]]; then
     echo 'Usage: $0 test-name repo path debug'
@@ -19,38 +21,44 @@ debug=$4
 url=dropbox://$path
 repo=$repo.$RANDOM
 
-oxit --version
+oxly --version
+
+echo "Starting test $tname ..."
+oxly --oxly-repo $repo clone --init-ancdb $url
+echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+
+# irl would do some mods on both dbx clients here
 
 full_local_path=$repo/$path
-oxit --oxit-repo $repo clone $url
+oxly --oxly-repo $repo clone $url
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo log --oneline $path
+oxly --oxly-repo $repo log --oneline $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo diff $path
-#oxit --oxit-repo $repo merge $path
+#need 2 revs oxly --oxly-repo $repo diff $path
+#oxly --oxly-repo $repo merge $path
 date >> $full_local_path
+#echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+oxly --oxly-repo $repo status $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo status $path
+oxly --oxly-repo $repo add $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo add $path
+oxly --oxly-repo $repo diff --reva head --revb index $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo diff --reva head --revb index $path
-echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo status $path
+oxly --oxly-repo $repo status $path
 
-tmpf=/tmp/fooxit.$RANDOM
+tmpf=/tmp/fooxly.$RANDOM
 cp $full_local_path $tmpf
 
 # comment out this push to simulate fail yo
-oxit $debug --oxit-repo $repo push --no-post-push-clone $path
+oxly $debug --oxly-repo $repo push --no-post-push-clone $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo status $path
+oxly --oxly-repo $repo status $path
 
 mv $repo $repo.old
 #echo rm $full_local_path
 
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxit --oxit-repo $repo clone $url
+oxly --oxly-repo $repo clone $url
 
 cmp -s $tmpf $full_local_path
 if [[ $? != 0 ]]; then

@@ -187,9 +187,7 @@ $ oxly push --add orgzly/foo.org # will reset ancdb
 
 or if you don't need to merge now but want to reset ancdb for this file:
 ```bash
-$ oxly clone dropbox://orgzly/foo.org # get latest ancdb
-$ oxly ancdb_set orgzly/foo.org
-$ oxly ancdb_push
+$ oxly clone --init-ancdb  dropbox://orgzly/foo.org # get latest ancdb
 ```
 
 #### Revert revision as fallback
