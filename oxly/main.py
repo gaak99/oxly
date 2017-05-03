@@ -961,6 +961,9 @@ class Oxly():
                 else:
                     print(err)
                     sys.exit(101)
+            except Exception as err:
+                sys.exit('Call to Dropbox to upload file data failed: %s' % err)
+
         hash = calc_dropbox_content_hash(local_path)
         os.remove(index_path)
         return hash
@@ -1000,7 +1003,9 @@ class Oxly():
                 else:
                     print(err)
                     sys.exit(1)
-        
+            except Exception as err:
+                sys.exit('Call to Dropbox to upload ancestor db failed: %s' % err)
+
     def _get_index_paths(self):
         index_dir = self._get_pname_index()
         return get_relpaths_recurse(index_dir)
