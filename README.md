@@ -161,15 +161,14 @@ It should be done before any other changes are saved to this file on Dropbox/Ema
 
 ### Caveats/Gotchas
 
+####  No data file or ancdb file locking
+* A lock of the data file being merged and ancdb would be useful for data safety here but I don't see it in the Dropbox v2 api (tis a hard problem in distributed systems but NFS Lock Mgr come back ALL IS FORGIVEN) sooooo ...
+ 
 ##### One `oxmerge url` at a time
-* Currently it's only fully safe to oxmerge (oxit clone/merge/push) one file at a time. Some consistency checks are done and more planned but maynot remove all data races and such.
+* ancdb is a shared resource and currently it's only fully safe to oxmerge (aka oxit clone/merge/push) one file at a time. Some consistency checks are done and more planned but maynot remove all data races and such.
 
-
-######  no data file locking
-* For a succesful merge, once the oxmerge process (aka 2 latest revisions downloaded) begins the user needs to be careful and not change the file anymore outside of the process (until process completes). A lock of the file would be useful here but I don't see it in the Dropbox v2 api (NFS Lock Mgr come back ALL IS FORGIVEN)
-
-###### no ancdb locking
-* Thus as mentioned above to be safe only start/complete one oxmerge url at a time.
+##### No edits to a data file while running oxmerge (or oxly clone-->push)
+* For a succesful merge, once the oxmerge process (aka 2 latest revisions downloaded) begins the user needs to be careful and not change the file anymore outside of the process until process completes.
 
 ### Troubleshooting
 
