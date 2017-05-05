@@ -36,7 +36,6 @@ mv $frdbxpath $dbxpath #dont clutter top level brah
 fname=oxly-testf.txt
 orgzly_dir=oxly-testmedir
 td=td${RANDOM}
-#i said top yo path=$orgzly_dir/$td
 path=$orgzly_dir
 
 dbxpath=$dbxhome/$path
@@ -71,24 +70,3 @@ echo
 echo '======================================================================'
 echo
 
-# fresh orgzly dir
-
-fname=oxly-testf.txt
-orgzly_dir=oxly-testmedir
-fresh_orgzly_dir=oxly-testmedir-$RANDOM
-#i said top yo path=$orgzly_dir/$td
-path=$fresh_orgzly_dir
-
-dbxpath=$dbxhome/$path
-mkdir -p $dbxpath
-frdbxpath=$dbxhome/$path
-mkdir -p $frdbxpath
-sleep 2 #syncmemaybe
-
-path=$path/$fname
-
-date >> $dbxpath/$fname
-repo=/tmp/test-oxly$RANDOM
-sleep 5 #syncmemaybe
-bash $sh_debug $tests_path 'top level orgzly_dir/file' $repo $path $subsh_debug
-#rm-me-maybe-dir $dbxox

@@ -402,6 +402,10 @@ class Oxly():
             print('error: URL must have leading slash and no trailing slash')
             sys.exit(1)
 
+        pl = filepath.split('/')
+        if len(pl) < 3:
+            sys.exit('Error: url form is dropbox://<orgzly>/[/<subdirs>/]<file.org>')
+        
         repo_home = self._get_pname_home_base() + filepath
         repo_home_dir = os.path.dirname(os.path.expanduser(repo_home))
         make_sure_path_exists(repo_home_dir)

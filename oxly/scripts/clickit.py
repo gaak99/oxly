@@ -20,7 +20,7 @@
 # SOFTWARE.
 
 import click
-from oxly.main import Oxly
+from oxly.core import Oxly
 
 from . import __version__
 
@@ -50,7 +50,7 @@ def add(oxly, filepath):
 def reset(oxly, filepath):
     oxly.reset(filepath)
 
-@cli.command(help='Download revisions of Dropbox file to local dir/repo and checkout HEAD to working dir. Local dir default is $PWD but can be set (see global opts), SRC format: dropbox://$filepath')
+@cli.command(help='Download revisions of Dropbox file to local dir/repo and checkout HEAD to working dir. Local dir default is $PWD but can be set (see global opts), SRC format: dropbox://<orgzly>/[/<subdirs>/]<file.org>')
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--init-ancdb/--no-init-ancdb', default=False)
 @click.option('--nrevs',
