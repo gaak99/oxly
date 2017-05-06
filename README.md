@@ -207,6 +207,12 @@ $ oxly cat orgzly/foo.org
 ##### Revert revision on dropbox.com
 * Login using web ui, look for menu right of file
 
+#### Network partitions while running oxmerge or clone/push
+* You can usually just retry the cmd
+
+##### Push of merged data succeeds but ancdb_push fails
+* At the end of `push` it will run `ancdb_push`.  If the the data file upload succeeds but ancdb upload fails, you can run `ancdb_push` by hand.
+
 ### Tips/Tricks
 
 #### Using oxly
@@ -216,6 +222,13 @@ $ oxly cat orgzly/foo.org
 
 ##### Tips for a clean -- no conflicts are a wonderful thang -- merge
 * I have a misc notes file I slang url's and ideas to several times a day on Emacs and Orgzly and oxmerge once a day. And I'm mostly adding new (org top level) entries and much less changing older ones. To get a better chance of a clean (auto) merge I usually append note entries on Orgzly and prepend (below org TITLE header(s)) on Emacs. Also on Emacs I make sure the body of the note added has a empty line before and after as Orgzly likes it that way. So when Orgzly later groks it no changes are done that many result in an annoying dirty merge.
+
+##### Network partitions while running oxmerge or clone/push
+* You can usually just retry the oxly cmd. If oxmerge fails you should prolly run the individual oxly cmds unless it failed during `clone` phase.
+
+###### Push of merged data succeeds but ancdb_push fails
+* At the end of `push` it will run `ancdb_push`.  If the the data file upload succeeds but ancdb upload fails, you can run `ancdb_push` by hand.
+
 
 #### Using ediff
 * ediff skillz def a plus here. But if you are not currently used to using ediff then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- but very useful Emacs app.
