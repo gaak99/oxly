@@ -159,6 +159,40 @@ Please select Sync (regular, Forced not necessary) note on Orgzly now.
 It should be done before any other changes are saved to this file on Dropbox/Emacs/Orgzly.
 ```
 
+### Tips/Tricks
+
+#### Using oxly
+
+##### oxly cmds log (--oneline is nice), diff, and cat are handy to view a revision metadata/data
+* See `oxly cmd --help`.
+
+##### Tips for a clean -- no conflicts are a wonderful thang -- merge
+* I have a misc notes file I slang url's and ideas to several times a day on Emacs and Orgzly and oxmerge once a day. And I'm mostly adding new (org top level) entries and much less changing older ones. To get a better chance of a clean (auto) merge I usually append note entries on Orgzly and prepend (below org TITLE header(s)) on Emacs. Also on Emacs I make sure the body of the note added has a empty line before and after as Orgzly likes it that way. So when Orgzly later groks it no changes are done that many result in an annoying dirty merge.
+
+##### Network partitions while running oxmerge or clone/push
+* You can usually just retry the oxly cmd. If oxmerge fails you should prolly run the individual oxly cmds unless it failed during `clone` phase.
+
+###### Push of merged data succeeds but ancdb_push fails
+* At the end of `push` it will run `ancdb_push`.  If the the data file upload succeeds but ancdb upload fails, you can run `ancdb_push` by hand.
+
+
+#### Using ediff
+* ediff skillz def a plus here. But if you are not currently used to using ediff then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- but very useful Emacs app.
+* Orgzly seems to add blank line(s) so don't ediff merge them out on Emacs else u will keep seeing them come back -- zombielike --  to haunt you and must re-merge again and again.
+* BTW if you don't dig your ediff config try mines (that I found on the Net)
+
+```lisp
+;; don't start another frame
+;; this is done by default in preluse
+(setq ediff-window-setup-function 'ediff-setup-windows-plain)
+;; put windows side by side
+(setq ediff-split-window-function (quote split-window-horizontally))
+;; revert windows on exit - needs winner mode
+(winner-mode)
+(add-hook 'ediff-after-quit-hook-internal 'winner-undo)
+(add-hook 'ediff-prepare-buffer-hook #'show-all)
+```
+
 ### Caveats/Gotchas
 
 ####  No data file or ancdb file locking
@@ -169,6 +203,8 @@ It should be done before any other changes are saved to this file on Dropbox/Ema
 
 ##### No edits to a data file while running oxmerge (or oxly clone-->push)
 * For a succesful merge, once the oxmerge process (aka 2 latest revisions downloaded) begins the user needs to be careful and not change the file anymore outside of the process until process completes.
+
+#### Developed/tested on MacOS and Linux so non-Unix-like systems may be trouble
 
 ### Troubleshooting
 
@@ -213,41 +249,6 @@ $ oxly cat orgzly/foo.org
 ##### Push of merged data succeeds but ancdb_push fails
 * At the end of `push` it will run `ancdb_push`.  If the the data file upload succeeds but ancdb upload fails, you can run `ancdb_push` by hand.
 
-### Tips/Tricks
-
-#### Using oxly
-
-##### oxly cmds log (--oneline is nice), diff, and cat are handy to view a revision metadata/data
-* See `oxly cmd --help`.
-
-##### Tips for a clean -- no conflicts are a wonderful thang -- merge
-* I have a misc notes file I slang url's and ideas to several times a day on Emacs and Orgzly and oxmerge once a day. And I'm mostly adding new (org top level) entries and much less changing older ones. To get a better chance of a clean (auto) merge I usually append note entries on Orgzly and prepend (below org TITLE header(s)) on Emacs. Also on Emacs I make sure the body of the note added has a empty line before and after as Orgzly likes it that way. So when Orgzly later groks it no changes are done that many result in an annoying dirty merge.
-
-##### Network partitions while running oxmerge or clone/push
-* You can usually just retry the oxly cmd. If oxmerge fails you should prolly run the individual oxly cmds unless it failed during `clone` phase.
-
-###### Push of merged data succeeds but ancdb_push fails
-* At the end of `push` it will run `ancdb_push`.  If the the data file upload succeeds but ancdb upload fails, you can run `ancdb_push` by hand.
-
-
-#### Using ediff
-* ediff skillz def a plus here. But if you are not currently used to using ediff then this is good way to learn it. It's def a non-trivial -- UI-wise and concept-wise  -- but very useful Emacs app.
-* Orgzly seems to add blank line(s) so don't ediff merge them out on Emacs else u will keep seeing them come back -- zombielike --  to haunt you and must re-merge again and again.
-* BTW if you don't dig your ediff config try mines (that I found on the Net)
-
-```lisp
-;; don't start another frame
-;; this is done by default in preluse
-(setq ediff-window-setup-function 'ediff-setup-windows-plain)
-;; put windows side by side
-(setq ediff-split-window-function (quote split-window-horizontally))
-;; revert windows on exit - needs winner mode
-(winner-mode)
-(add-hook 'ediff-after-quit-hook-internal 'winner-undo)
-(add-hook 'ediff-prepare-buffer-hook #'show-all)
-```
-
-##### Developed/tested on MacOS and Linux so non-Unix-like systems may be trouble
 
 #### Design
 * oxly is not git -- no real commits, no branches, single user, etc. But as far as a poor-man's DVCS goes, oxly can be useful when git is not avail. Oxly just implements enough of a subset of git to support a basic clone-merge-add-push flow (and a few others to view the revisions and merged file). New files in wd/index not supported.
