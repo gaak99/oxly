@@ -1,9 +1,14 @@
 # Intro
-oxly uses the Dropbox API to auto-merge Orgzly/Emacs/Dropbox file revisions with a git-like cli.
+oxly uses the Dropbox API to auto-merge Dropbox file revisions with a git-like cli.
 
-So you can edit and save the same file simultaneously on two Dropbox clients (usually Emacs/laptop and Orgzly/mobile) and then later run oxly on laptop to view/diff/merge/push revisions.
+It's geared toward the Orgzly Android app and Emacs users -- especially for merge conflict resolution -- but many of the features can be used for general Dropbox revision groking.
 
-oxly is most useful when you try to Orgzly `Sync` in this situation you see the "Both local and remote notebook have been modified" error msg.
+You can edit and save the same file simultaneously on two Dropbox clients -- usually Emacs/laptop and Orgzly/mobile -- and then later run oxly on laptop to view/diff/merge/push revisions.
+
+oxly is most useful when you try to Orgzly `Sync` and it fails with the following error message
+```
+Both local and remote notebook have been modified.
+```
 
 The oxly `merge` cmd uses diff3(1) and will try to auto-merge. If it can't auto-merge all hunks the conflicts can be resolved by hand with Emacs' ediff-merge-with-ancestor (nice UI) or $EDITOR diff3-output (not so nice UI).
 
