@@ -15,11 +15,15 @@ The oxly `merge` cmd uses diff3(1) and will try to auto-merge. If it can't auto-
 My use case is two Dropbox clients (Emacs/Unix, Ogzly/Android) so more/other clients not tested but maybe can be done carefully and two at a time. Also see Caveats/Gotchas below.
 
 ## Status
-Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage so far -- beta testers aka early adopters and comments/issues welcome (submit an issue/suggestion/question https://github.com/gaak99/oxly/issues).
+Used dailyish by the developer (w/2 Dropbox clients, Emacs laptop and Orgzly mobile) but that's total usage asfaik -- more users are welcome -- any bug/issue/suggestion/question post it at https://github.com/gaak99/oxly/issues).
 
 You probably want to try master HEAD before fetching a release.
 
 oxly does no Deletes via Dropbox API and all edits/merges are saved as a new revision, so should be low risk to give it a try. And note if a mismerge is saved you can easily revert to the revision you want, see Caveats/Gotchas below.
+
+### Update April 2018
+
+It's been over a year since any big changes so seems pretty solid at least for my usage -- when I'm in note-taking-mode I use it almost daily and works good. My only complaint is diff3 seems to not auto-merge as frequently as I hoped. But I've gotten good at emacs ediff to resolve conflicts so not a big problem.
 
 ## Backstory
 *Every time* you edit/save or copy over an existing file (_citation needed_) a new revision is quietly made by Dropbox.
