@@ -1,7 +1,7 @@
 # Intro
 oxly uses the Dropbox API to auto-merge Dropbox file revisions with a git-like cli.
 
-It's geared toward the Orgzly Android app and Emacs users -- especially for merge conflict resolution -- but many of the features can be used for general Dropbox revision groking.
+Though much of this README is geared toward Orgzly/Emacs usage many of the features can be used for general Dropbox revision groking.
 
 You can edit and save the same file simultaneously on two Dropbox clients -- usually Emacs/laptop and Orgzly/mobile -- and then later run oxly on laptop to view/diff/merge/push revisions.
 
@@ -10,7 +10,7 @@ oxly is most useful when you try to Orgzly `Sync` and it fails with the followin
 Both local and remote notebook have been modified.
 ```
 
-The oxly `merge` cmd uses diff3(1) and will try to auto-merge. If it can't auto-merge all hunks the conflicts can be resolved by hand with Emacs' ediff-merge-with-ancestor (nice UI) or $EDITOR diff3-output (not so nice UI).
+The oxly `merge` cmd uses diff3(1) and will try to auto-merge. If it can't auto-merge all hunks the conflicts can be resolved by hand with the Emacs ediff-merge-with-ancestor cmd (nice UI) or $EDITOR diff3-output (not so nice UI).
 
 My use case is two Dropbox clients (Emacs/Unix, Ogzly/Android) so more/other clients not tested but maybe can be done carefully and two at a time. Also see Caveats/Gotchas below.
 
@@ -33,7 +33,6 @@ And as a long time casual Dropbox user this was news to me recently.
 And my fave org-mode mobile app Orgzly supports Dropbox but not git(1) (yet) so I needed a way to merge notes that are modified on both laptop and mobile.
 
 And if you squint hard enough Dropbox's auto-versioning looks like lightweight commits and maybe we can simulate a (limited) DVCS here enough to be useful.
-
 
 ## Theory of operation
 On Dropbox we keep a small&simple filename=content_hash kv db called the ancdb.
