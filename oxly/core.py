@@ -50,6 +50,8 @@ OXLYINDEX = 'index'
 OLDDIR = '.old'
 LOGFILENAME = 'log.txt'
 HASHREVDB = 'hashrevdb.json'
+# 100 appears to be free svc max, non-free max?
+NREVS_MAX = 100
 
 # defaults 2-way diff/merge
 MERGE_BIN = "emacsclient"
@@ -387,6 +389,9 @@ class Oxly():
         nrevs = int(nrevs)
         self._debug('debug clone: nrevs=%d' % (nrevs))
 
+        if nrevs > NREVS_MAX:
+            print('Warning: max number of revisions for free service is %s' % NREVS_MAX)
+
         if dry_run:
             print('clone dry-run: remote repo = %s' % src_url)
             print('clone dry-run: local repo = %s' % self.repo)
@@ -419,7 +424,7 @@ class Oxly():
                                                                    filepath,
                                                                    self.repo))
         # Get revs' metadata
-        print("Downloading metadata of %d latest revisions on Dropbox ..." %
+        print("Downloading metadata of %d (max) latest revisions on Dropbox ..." %
               nrevs, end='')
         md_l = self._get_revs_md(filepath, nrevs)
         print(' done.')
@@ -456,9 +461,15 @@ class Oxly():
                 rev = self._hash2rev(filepath, anchash)
                 if rev == None:
                     print('Warning: ancestor rev not found in local metadata cache; anchash=%s' % anchash[:8])
-                    print('Warning: Try clone with higher nrevs.')
-                    print('Warning: try; oxly clone --nrevs %d %s' % (nrevs+50, src_url))
-                    print('Warning: if that succeeds, you can rerun oxmerge or continue with oxly merge.')
+                    if nrevs < NREVS_MAX:
+                        print('Warning: Try clone with higher nrevs (%d max).' % NREVS_MAX)
+                        print('Warning: try; oxly clone --nrevs %d %s' % (NREVS_MAX, src_url))
+                        print('Warning: if that succeeds, you can rerun oxmerge or continue with oxly merge.')
+                    else:
+                        print('Warning: max nrevs (for free svc, %d) have been downloaded and rev not found.' % NREVS_MAX)
+                        print('Warning: 3-way merge cant be done now, to merge by hand w/emacsclient ediff and reset ancestor db:')
+                        print('Warning: \toxly merge2 %s' % filepath.strip('/'))
+                        print('Warning: \toxly push --add %s' % filepath.strip('/'))
                     sys.exit(1)
                 print('Checking ancestor rev data ...')
                 self.pull(rev, filepath)

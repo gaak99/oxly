@@ -144,7 +144,7 @@ oxmerge dropbox://orgzly/misc-notes-spring17.org
 oxly, version 0.9.21
 Cloning dropbox://orgzly/misc-notes-spring17.org into /tmp/oxnotes ...
 Moving/saving old /tmp/oxnotes/.oxly/.tmp to /tmp/oxnotes/.oxly/.old/oxlytmp.10636 ... done.
-Downloading metadata of 50 latest revisions on Dropbox ... done.
+Downloading metadata of 100 latest revisions on Dropbox ... done.
 Checking 2 latest revisions in Dropbox...
 	downloading rev 33880446decd data ... done.
 	downloading rev 33870446decd data ... done.

@@ -55,7 +55,7 @@ def reset(oxly, filepath):
 @click.option('--init-ancdb/--no-init-ancdb', default=False)
 @click.option('--nrevs',
               help='Number of latest metadata of revisions (defaults to 50) to download from Dropbox.',
-              required=False, default=50)
+              required=False, default=100)
 @click.argument('src')
 @click.pass_obj
 def clone(oxly, dry_run, src, nrevs, init_ancdb):

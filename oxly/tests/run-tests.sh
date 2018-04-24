@@ -1,15 +1,15 @@
 
-set -e # exit on error
 
-sh_debug="" #"-x"
+sh_debug=""
 #sh_debug="-x"
 dbxhome="$HOME/Dropbox"
 
 subsh_debug='--no-debug'
 
-tests_path=oxly/tests/oxly-test-basic.sh
 
-# fresh orgzly dir
+## fresh orgzly dir - issue #46
+# no set -x?
+tests_path=oxly/tests/test-issue46.sh
 
 fname=oxly-testf.txt
 orgzly_dir=oxly-testmedir
@@ -28,6 +28,33 @@ date >> $frdbxpath/$fname
 
 repo=/tmp/test-oxly$RANDOM
 sleep 2 #syncmemaybe
+
+bash $sh_debug $tests_path 'issue #46' $repo $path $subsh_debug
+mv $frdbxpath $dbxpath #dont clutter top level brah
+#exit 99 #tmp
+
+## fresh orgzly dir - basic tests
+set -e # exit on error
+tests_path=oxly/tests/oxly-test-basic.sh
+
+fname=oxly-testf.txt
+orgzly_dir=oxly-testmedir
+fresh_orgzly_dir=oxly-testmedir-$RANDOM
+#i said top yo path=$orgzly_dir/$td
+path=$fresh_orgzly_dir
+
+dbxpath=$dbxhome/$orgzly_dir
+mkdir -p $dbxpath
+frdbxpath=$dbxhome/$fresh_orgzly_dir
+mkdir -p $frdbxpath
+sleep 2 #syncmemaybe
+
+path=$path/$fname
+date >> $frdbxpath/$fname
+
+repo=/tmp/test-oxly$RANDOM
+sleep 2 #syncmemaybe
+
 bash $sh_debug $tests_path 'fresh orgzly_dir' $repo $path $subsh_debug
 mv $frdbxpath $dbxpath #dont clutter top level brah
 #exit 99 #tmp
