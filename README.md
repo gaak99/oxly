@@ -266,14 +266,22 @@ $ oxly cat orgzly/foo.org
 * Only handles a single file on Dropbox as remote repo (might be expanded to a dir tree in future). 
 
 
-# Tests
+# Tests for developers
 
 ```bash
-export PYTHONPATH=/tmp/pypath
-mkdir /tmp/pypath && python setup.py develop --install-dir /tmp/pypath
+$ export PYTHONPATH=/tmp/pypath
+$ mkdir /tmp/pypath && python setup.py develop --install-dir /tmp/pypath
+
+# If you bumpup the version of dev pkg and have a prev version installed globally,
+# you will probably have to uninstall global version to test dev version.
+$ oxly --version
+oxly, version 0.10.10
+$ sudo python -m pip uninstall oxly
+/tmp/pypath/oxly --version
+$ oxly, version 0.10.11
 
 # note valid Dropbox auth token needed in ~/.oxlyconfig
-PATH=/tmp/pypath:$PATH bash oxly/tests/run-tests.sh
+$ PATH=/tmp/pypath:$PATH bash oxly/tests/run-tests.sh
 ```
 
 # Legalese
