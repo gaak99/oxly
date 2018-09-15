@@ -37,13 +37,18 @@ oxlycmd=oxly
 nlog=5
 
 $oxlycmd --version
+
 echo "Cloning $dbx_url into $(pwd) ..."
 $oxlycmd clone $dbx_url
+
 echo "Viewing metadata latest 2 revisions (cached locally) ..."
-$oxlycmd log --oneline $fp | head -2
+$oxlycmd log --oneline --recent 2 $fp
+
 echo "Viewing metadata least latest 2 revisions (cached locally) ..."
 $oxlycmd log --oneline $fp | tail -2
+
 echo "Merging latest 2 revisions data ..."
 $oxlycmd merge $fp
+
 echo "Pushing merged revision data ..."
 $oxlycmd push --add $fp

@@ -20,7 +20,7 @@
 # SOFTWARE.
 
 import click
-from oxly.core import Oxly
+from oxly.core import Oxly, NREVS_MAX
 
 from . import __version__
 
@@ -55,7 +55,7 @@ def reset(oxly, filepath):
 @click.option('--init-ancdb/--no-init-ancdb', default=False)
 @click.option('--nrevs',
               help='Number of latest metadata of revisions (defaults to 50) to download from Dropbox.',
-              required=False, default=100)
+              required=False, default=NREVS_MAX)
 @click.argument('src')
 @click.pass_obj
 def clone(oxly, dry_run, src, nrevs, init_ancdb):
@@ -82,10 +82,13 @@ def init(oxly):
 @cli.command(help='Display meta data of revisions downloaded from Dropbox, oneline format: rev-string file-size (bytes) date-modded Dropbox-content-hash (first 8 chars)')
 @click.option('--oneline/--no-oneline', required=False, default=False,
               help='One line per revision.')
+@click.option('--recent', required=True, default=NREVS_MAX,
+              type=click.IntRange(1, NREVS_MAX),
+              help='Only output N most recent entries.')
 @click.argument('filepath', required=True, default=None)
 @click.pass_obj
-def log(oxly, oneline, filepath):
-    oxly.log(oneline, filepath)
+def log(oxly, oneline, recent, filepath):
+    oxly.log(oneline, recent, filepath)
 
 @cli.command(help='Run 3-way merge. Default: diff3 -m HEADMINUS1 ANCESTOR HEAD')
 @click.option('--dry-run/--no-dry-run', default=False)

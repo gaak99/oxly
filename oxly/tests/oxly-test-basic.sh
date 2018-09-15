@@ -32,7 +32,8 @@ echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 full_local_path=$repo/$path
 oxly --oxly-repo $repo clone $url
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-oxly --oxly-repo $repo log --oneline $path | head -5
+#oxly --oxly-repo $repo log --oneline $path | head -5
+oxly --oxly-repo $repo log --oneline --recent 5 $path
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 #need 2 revs oxly --oxly-repo $repo diff $path
 #oxly --oxly-repo $repo merge $path

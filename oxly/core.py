@@ -50,7 +50,7 @@ OXLYINDEX = 'index'
 OLDDIR = '.old'
 LOGFILENAME = 'log.txt'
 HASHREVDB = 'hashrevdb.json'
-# 100 appears to be free svc max, non-free max?
+# 100 appears to be free Dropbox svc max, non-free max?
 NREVS_MAX = 100
 
 # defaults 2-way diff/merge
@@ -912,25 +912,35 @@ class Oxly():
             sys.exit('error: log file not found -- check file name spelling or if clone completed ok')
         return content
 
-    def _log_one_path(self, oneline, path):
+    def _log_one_path(self, oneline, recent, path):
         # on disk '$fileOXLYSEP2log':
         #   $rev $date $size $hash
+        nout = 0
         logs = self._get_log(path)
         if oneline:
             for l in logs:
+                if nout >= recent:
+                    break
+
                 (rev, date, size, content_hash) = l.split(OXLYSEP1)
                 print('%s\t%s\t%s\t%s' % (rev, size.rstrip(),
                                           utc_to_localtz(date),
                                           content_hash[:8]))
+                nout += 1
         else:
             for l in logs:
+                if nout >= recent:
+                    break
+
                 (rev, date, size, content_hash) = l.split(OXLYSEP1)
                 print('Revision:  %s' % rev)
                 print('Size (bytes):  %s' % size.rstrip())
                 print('Server modified:  %s' % utc_to_localtz(date))
                 print('Content hash:  %s' % content_hash)
+                nout += 1
+
  
-    def log(self, oneline, filepath):
+    def log(self, oneline, recent, filepath):
         """List all local revisions (subset of) meta data""" 
         self._debug('debug: start log: %s' % filepath)
         fp_l = self._get_paths(filepath)
@@ -938,7 +948,7 @@ class Oxly():
         for p in fp_l:
             if l > 1:
                 print('%s:' % p)
-            self._log_one_path(oneline, p)
+            self._log_one_path(oneline, recent, p)
             if l > 1:
                 print()
 
